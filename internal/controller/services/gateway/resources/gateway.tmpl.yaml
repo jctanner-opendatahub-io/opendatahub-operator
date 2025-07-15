@@ -15,7 +15,7 @@ spec:
   - name: http
     port: 80
     protocol: HTTP
-    hostname: "*.{{ .spec.domain }}"
+    hostname: "*.odh.apps-crc.testing"
     allowedRoutes:
       namespaces:
         from: Selector
@@ -25,7 +25,7 @@ spec:
   - name: https
     port: 443
     protocol: HTTPS
-    hostname: "*.{{ .spec.domain }}"
+    hostname: "*.odh.apps-crc.testing"
     tls:
       mode: Terminate
       certificateRefs:
@@ -36,4 +36,4 @@ spec:
         from: Selector
         selector:
           matchLabels:
-            opendatahub.io/gateway-enabled: "true" 
+            opendatahub.io/gateway-enabled: "true"

@@ -25,9 +25,7 @@ import (
 	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/ptr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	gwapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	serviceApi "github.com/opendatahub-io/opendatahub-operator/v2/api/services/v1alpha1"
 	odhtypes "github.com/opendatahub-io/opendatahub-operator/v2/pkg/controller/types"
@@ -41,6 +39,7 @@ const (
 //go:embed resources
 var resourcesFS embed.FS
 
+/*
 func initialize(ctx context.Context, rr *odhtypes.ReconciliationRequest) error {
 	rr.Templates = []odhtypes.TemplateInfo{
 		{
@@ -51,52 +50,26 @@ func initialize(ctx context.Context, rr *odhtypes.ReconciliationRequest) error {
 
 	return nil
 }
+*/
 
-func createGatewayClass(ctx context.Context, rr *odhtypes.ReconciliationRequest) error {
+func initialize(ctx context.Context, rr *odhtypes.ReconciliationRequest) error {
 	log := logf.FromContext(ctx)
 
-	// Create Istio GatewayClass resource
-	gatewayClass := &gwapiv1.GatewayClass{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: generateGatewayClassName(),
-			Labels: map[string]string{
-				"app.kubernetes.io/name":       "istio-gateway",
-				"app.kubernetes.io/component":  "gatewayclass",
-				"app.kubernetes.io/managed-by": "opendatahub-operator",
-			},
-			Annotations: map[string]string{
-				annotations.ManagedByODHOperator: "true",
-			},
-		},
-		Spec: gwapiv1.GatewayClassSpec{
-			ControllerName: "istio.io/gateway-controller",
-			Description:    ptr.To("Istio Gateway implementation for OpenDataHub"),
-		},
-	}
-
-	if err := rr.AddResources(gatewayClass); err != nil {
-		return fmt.Errorf("failed to add gateway class: %w", err)
-	}
-
-	log.Info("GatewayClass created successfully", "name", gatewayClass.Name, "controllerName", gatewayClass.Spec.ControllerName)
-	return nil
-}
-
-func createGatewayServiceResource(ctx context.Context, rr *odhtypes.ReconciliationRequest) error {
-	log := logf.FromContext(ctx)
-
-	// This function is called when reconciling an existing Gateway service resource
-	// The Gateway service resource should already exist if we're here
-	// But we can log some information about the current resource being reconciled
-
-	if rr.Instance != nil {
-		gatewayInstance, ok := rr.Instance.(*serviceApi.Gateway)
-		if ok {
-			log.Info("Reconciling existing Gateway service resource",
-				"name", gatewayInstance.Name,
-				"namespace", gatewayInstance.Namespace,
-				"domain", gatewayInstance.Spec.Domain)
+	// DEBUG: List embedded files
+	entries, err := resourcesFS.ReadDir("resources")
+	if err != nil {
+		log.Error(err, "failed to read embedded resources directory")
+	} else {
+		for _, e := range entries {
+			log.Info("embedded template file found", "name", e.Name())
 		}
+	}
+
+	rr.Templates = []odhtypes.TemplateInfo{
+		{
+			FS:   resourcesFS,
+			Path: GatewayTemplate, // likely needs to be "resources/gateway.tmpl.yaml"
+		},
 	}
 
 	return nil
@@ -104,6 +77,8 @@ func createGatewayServiceResource(ctx context.Context, rr *odhtypes.Reconciliati
 
 func createGatewayService(ctx context.Context, rr *odhtypes.ReconciliationRequest) error {
 	log := logf.FromContext(ctx)
+
+	log.Info("createGatewayService START!!!")
 
 	// Create a Gateway Service object if it doesn't exist
 	gatewayService := &corev1.Service{

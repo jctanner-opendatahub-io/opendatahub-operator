@@ -63,13 +63,10 @@ func (h *serviceHandler) NewReconciler(ctx context.Context, mgr ctrl.Manager) er
 	_, err := reconciler.ReconcilerFor(mgr, &serviceApi.Gateway{}).
 		// operands - owned
 		Owns(&gwapiv1.Gateway{}).
-		Owns(&gwapiv1.GatewayClass{}).
 		Owns(&corev1.Secret{}).
 		Owns(&certmanagerv1.Certificate{}).
 		// actions
 		WithAction(initialize).
-		WithAction(createGatewayClass).
-		WithAction(createGatewayServiceResource).
 		WithAction(createCertificateResources).
 		WithAction(template.NewAction()).
 		WithAction(deploy.NewAction(

@@ -2,7 +2,6 @@ package gateway
 
 import (
 	"context"
-	"fmt"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -35,6 +34,7 @@ func getGatewayDomain(ctx context.Context, cli client.Client) (string, error) {
 	return "gateway.local", nil
 }
 
+/*
 // generateGatewayName generates a consistent gateway name
 func generateGatewayName(namespace string) string {
 	return fmt.Sprintf("odh-gateway-%s", namespace)
@@ -42,6 +42,7 @@ func generateGatewayName(namespace string) string {
 
 // generateGatewayClassName returns the appropriate gateway class name
 func generateGatewayClassName() string {
-	// Use Istio gateway class for Gateway API migration
-	return "istio"
+	// Use the default gateway class - this could be made configurable
+	return "openshift-default"
 }
+*/
