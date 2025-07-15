@@ -43,6 +43,7 @@ package datasciencecluster
 
 // Gateway API permissions
 // +kubebuilder:rbac:groups="gateway.networking.k8s.io",resources=gateways,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="gateway.networking.k8s.io",resources=gatewayclasses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="gateway.networking.k8s.io",resources=httproutes,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="gateway.networking.k8s.io",resources=referencegrants,verbs=get;list;watch;create;update;patch;delete
 

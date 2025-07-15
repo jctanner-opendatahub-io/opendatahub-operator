@@ -25,7 +25,9 @@ import (
 	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	gwapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	serviceApi "github.com/opendatahub-io/opendatahub-operator/v2/api/services/v1alpha1"
 	odhtypes "github.com/opendatahub-io/opendatahub-operator/v2/pkg/controller/types"
@@ -33,7 +35,7 @@ import (
 )
 
 const (
-	GatewayTemplate = "gateway.tmpl.yaml"
+	GatewayTemplate = "resources/gateway.tmpl.yaml"
 )
 
 //go:embed resources
@@ -45,6 +47,56 @@ func initialize(ctx context.Context, rr *odhtypes.ReconciliationRequest) error {
 			FS:   resourcesFS,
 			Path: GatewayTemplate,
 		},
+	}
+
+	return nil
+}
+
+func createGatewayClass(ctx context.Context, rr *odhtypes.ReconciliationRequest) error {
+	log := logf.FromContext(ctx)
+
+	// Create Istio GatewayClass resource
+	gatewayClass := &gwapiv1.GatewayClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: generateGatewayClassName(),
+			Labels: map[string]string{
+				"app.kubernetes.io/name":       "istio-gateway",
+				"app.kubernetes.io/component":  "gatewayclass",
+				"app.kubernetes.io/managed-by": "opendatahub-operator",
+			},
+			Annotations: map[string]string{
+				annotations.ManagedByODHOperator: "true",
+			},
+		},
+		Spec: gwapiv1.GatewayClassSpec{
+			ControllerName: "istio.io/gateway-controller",
+			Description:    ptr.To("Istio Gateway implementation for OpenDataHub"),
+		},
+	}
+
+	if err := rr.AddResources(gatewayClass); err != nil {
+		return fmt.Errorf("failed to add gateway class: %w", err)
+	}
+
+	log.Info("GatewayClass created successfully", "name", gatewayClass.Name, "controllerName", gatewayClass.Spec.ControllerName)
+	return nil
+}
+
+func createGatewayServiceResource(ctx context.Context, rr *odhtypes.ReconciliationRequest) error {
+	log := logf.FromContext(ctx)
+
+	// This function is called when reconciling an existing Gateway service resource
+	// The Gateway service resource should already exist if we're here
+	// But we can log some information about the current resource being reconciled
+
+	if rr.Instance != nil {
+		gatewayInstance, ok := rr.Instance.(*serviceApi.Gateway)
+		if ok {
+			log.Info("Reconciling existing Gateway service resource",
+				"name", gatewayInstance.Name,
+				"namespace", gatewayInstance.Namespace,
+				"domain", gatewayInstance.Spec.Domain)
+		}
 	}
 
 	return nil
@@ -177,4 +229,4 @@ func createCertificateResources(ctx context.Context, rr *odhtypes.Reconciliation
 
 	log.Info("cert-manager Certificate created successfully", "certificate", certificate.Name, "secretName", certificate.Spec.SecretName)
 	return nil
-} 
+}

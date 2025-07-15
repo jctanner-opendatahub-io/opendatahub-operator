@@ -35,7 +35,7 @@ type GatewaySpec struct {
 	// Domain is the domain name for the gateway
 	// +optional
 	Domain string `json:"domain,omitempty"`
-	
+
 	// Certificate contains certificate configuration for TLS
 	// +optional
 	Certificate *GatewayCertificate `json:"certificate,omitempty"`
@@ -59,13 +59,13 @@ type GatewayCertificate struct {
 	// +kubebuilder:validation:Enum=CertManager;Provided;SelfSigned
 	// +kubebuilder:default=CertManager
 	Type GatewayCertificateType `json:"type,omitempty"`
-	
+
 	// SecretName is the name of the secret containing the certificate
 	// When Type is CertManager, this will be the name of the secret created by cert-manager
 	// When Type is Provided, this should be the name of an existing secret
 	// +optional
 	SecretName string `json:"secretName,omitempty"`
-	
+
 	// IssuerRef is a reference to the cert-manager Issuer or ClusterIssuer
 	// Only used when Type is CertManager
 	// +optional
@@ -76,12 +76,12 @@ type GatewayCertificate struct {
 type GatewayIssuerRef struct {
 	// Name of the Issuer or ClusterIssuer
 	Name string `json:"name"`
-	
+
 	// Kind of the issuer (Issuer or ClusterIssuer)
 	// +kubebuilder:validation:Enum=Issuer;ClusterIssuer
 	// +kubebuilder:default=ClusterIssuer
 	Kind string `json:"kind,omitempty"`
-	
+
 	// Group of the issuer
 	// +kubebuilder:default=cert-manager.io
 	Group string `json:"group,omitempty"`
@@ -144,4 +144,4 @@ func (g *Gateway) GetConditions() []common.Condition {
 // SetConditions sets the conditions of the Gateway
 func (g *Gateway) SetConditions(conditions []common.Condition) {
 	g.Status.SetConditions(conditions)
-} 
+}

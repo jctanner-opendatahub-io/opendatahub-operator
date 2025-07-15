@@ -72,8 +72,8 @@ func computeKustomizeVariable(ctx context.Context, cli client.Client, platform c
 	}
 
 	return map[string]string{
-		"dashboard-url": baseConsoleURL[platform] + dscispec.ApplicationsNamespace + "." + consoleLinkDomain,
-		"section-title": sectionTitle[platform],
+		"dashboard-url":    baseConsoleURL[platform] + dscispec.ApplicationsNamespace + "." + consoleLinkDomain,
+		"section-title":    sectionTitle[platform],
 		"dashboard-domain": consoleLinkDomain,
 	}, nil
 }

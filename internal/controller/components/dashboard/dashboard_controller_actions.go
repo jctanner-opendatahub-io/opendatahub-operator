@@ -28,7 +28,7 @@ func initialize(ctx context.Context, rr *odhtypes.ReconciliationRequest) error {
 		// Fall back to startup-time platform if detection fails
 		platform = rr.Release.Name
 	}
-	
+
 	rr.Manifests = []odhtypes.ManifestInfo{defaultManifestInfo(platform)}
 
 	return nil

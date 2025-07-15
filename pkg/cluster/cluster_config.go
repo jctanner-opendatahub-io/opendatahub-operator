@@ -220,7 +220,7 @@ func getPlatform(ctx context.Context, cli client.Client) (common.Platform, error
 	if err == nil && dsci.Spec.Networking != nil && dsci.Spec.Networking.Mode == "gateway-api" {
 		return OpenDataHubGateway, nil
 	}
-	
+
 	switch os.Getenv("ODH_PLATFORM_TYPE") {
 	case "OpenDataHub":
 		return OpenDataHub, nil
