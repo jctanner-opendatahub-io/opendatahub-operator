@@ -14,9 +14,10 @@ import (
 
 var (
 	adminGroups = map[common.Platform]string{
-		cluster.SelfManagedRhoai: "rhods-admins",
-		cluster.ManagedRhoai:     "dedicated-admins",
-		cluster.OpenDataHub:      "odh-admins",
+		cluster.SelfManagedRhoai:  "rhods-admins",
+		cluster.ManagedRhoai:      "dedicated-admins",
+		cluster.OpenDataHub:       "odh-admins",
+		cluster.OpenDataHubGateway: "odh-admins",
 	}
 )
 

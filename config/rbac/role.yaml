@@ -177,11 +177,18 @@ rules:
 - apiGroups:
   - cert-manager.io
   resources:
+  - certificaterequests
   - certificates
+  - clusterissuers
   - issuers
   verbs:
   - create
+  - delete
+  - get
+  - list
   - patch
+  - update
+  - watch
 - apiGroups:
   - components.platform.opendatahub.io
   resources:
@@ -531,6 +538,20 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - gateway.networking.k8s.io
+  resources:
+  - gateways
+  - httproutes
+  - referencegrants
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - image.openshift.io
   resources:
@@ -921,6 +942,7 @@ rules:
   - services.platform.opendatahub.io
   resources:
   - auths
+  - gateways
   - monitorings
   verbs:
   - create
@@ -934,6 +956,7 @@ rules:
   - services.platform.opendatahub.io
   resources:
   - auths/finalizers
+  - gateways/finalizers
   - monitorings/finalizers
   verbs:
   - update
@@ -941,6 +964,7 @@ rules:
   - services.platform.opendatahub.io
   resources:
   - auths/status
+  - gateways/status
   - monitorings/status
   verbs:
   - get

@@ -44,6 +44,11 @@ type DSCInitializationSpec struct {
 	// authentication giving a Single Sign On experience.
 	// +optional
 	ServiceMesh *infrav1.ServiceMeshSpec `json:"serviceMesh,omitempty"`
+	// Configures networking mode for Data Science Clusters components.
+	// When set to "gateway-api", components will use Gateway API resources (HTTPRoute)
+	// instead of traditional OpenShift Routes or Ingress resources.
+	// +optional
+	Networking *NetworkingSpec `json:"networking,omitempty"`
 	// When set to `Managed`, adds odh-trusted-ca-bundle Configmap to all namespaces that includes
 	// cluster-wide Trusted CA Bundle in .data["ca-bundle.crt"].
 	// Additionally, this fields allows admins to add custom CA bundles to the configmap using the .CustomCABundle field.
@@ -53,6 +58,17 @@ type DSCInitializationSpec struct {
 	// This is not recommended to be used in production environment.
 	// +optional
 	DevFlags *DevFlags `json:"devFlags,omitempty"`
+}
+
+// NetworkingSpec defines the networking configuration for Data Science Clusters components.
+type NetworkingSpec struct {
+	// Mode specifies the networking mode for Data Science Clusters components.
+	// Valid values are "standard" and "gateway-api".
+	// - "standard": Uses traditional OpenShift Routes or Ingress resources (default)
+	// - "gateway-api": Uses Gateway API resources (HTTPRoute) for routing
+	// +kubebuilder:validation:Enum=standard;gateway-api
+	// +kubebuilder:default=standard
+	Mode string `json:"mode,omitempty"`
 }
 
 // DevFlags defines list of fields that can be used by developers to test customizations. This is not recommended

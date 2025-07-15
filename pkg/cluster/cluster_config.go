@@ -22,6 +22,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/opendatahub-io/opendatahub-operator/v2/api/common"
+	dsciv1 "github.com/opendatahub-io/opendatahub-operator/v2/api/dscinitialization/v1"
 	"github.com/opendatahub-io/opendatahub-operator/v2/pkg/cluster/gvk"
 )
 
@@ -84,6 +85,11 @@ func GetOperatorNamespace() (string, error) {
 
 func GetRelease() common.Release {
 	return clusterConfig.Release
+}
+
+// GetPlatform returns the current platform type by detecting it dynamically
+func GetPlatform(ctx context.Context, cli client.Client) (common.Platform, error) {
+	return getPlatform(ctx, cli)
 }
 
 func GetClusterInfo() ClusterInfo {
@@ -209,6 +215,12 @@ func detectManagedRhoai(ctx context.Context, cli client.Client) (common.Platform
 }
 
 func getPlatform(ctx context.Context, cli client.Client) (common.Platform, error) {
+	// Check for Gateway API mode in DSCI configuration
+	dsci, err := getDSCIConfiguration(ctx, cli)
+	if err == nil && dsci.Spec.Networking != nil && dsci.Spec.Networking.Mode == "gateway-api" {
+		return OpenDataHubGateway, nil
+	}
+	
 	switch os.Getenv("ODH_PLATFORM_TYPE") {
 	case "OpenDataHub":
 		return OpenDataHub, nil
@@ -319,4 +331,19 @@ func IsFipsEnabled(ctx context.Context, cli client.Client) (bool, error) {
 	}
 
 	return installConfig.FIPS, nil
+}
+
+// getDSCIConfiguration retrieves the DSCI configuration from the cluster
+func getDSCIConfiguration(ctx context.Context, cli client.Client) (*dsciv1.DSCInitialization, error) {
+	dsciList := &dsciv1.DSCInitializationList{}
+	if err := cli.List(ctx, dsciList); err != nil {
+		return nil, err
+	}
+
+	if len(dsciList.Items) == 0 {
+		return nil, errors.New("no DSCInitialization found")
+	}
+
+	// Return the first DSCI found (there should typically be only one)
+	return &dsciList.Items[0], nil
 }

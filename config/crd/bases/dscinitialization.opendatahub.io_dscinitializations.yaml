@@ -190,6 +190,24 @@ spec:
                     - message: MonitoringNamespace is immutable
                       rule: self == oldSelf
                 type: object
+              networking:
+                description: |-
+                  Configures networking mode for Data Science Clusters components.
+                  When set to "gateway-api", components will use Gateway API resources (HTTPRoute)
+                  instead of traditional OpenShift Routes or Ingress resources.
+                properties:
+                  mode:
+                    default: standard
+                    description: |-
+                      Mode specifies the networking mode for Data Science Clusters components.
+                      Valid values are "standard" and "gateway-api".
+                      - "standard": Uses traditional OpenShift Routes or Ingress resources (default)
+                      - "gateway-api": Uses Gateway API resources (HTTPRoute) for routing
+                    enum:
+                    - standard
+                    - gateway-api
+                    type: string
+                type: object
               serviceMesh:
                 description: |-
                   Configures Service Mesh as networking layer for Data Science Clusters components.

@@ -22,7 +22,14 @@ import (
 )
 
 func initialize(ctx context.Context, rr *odhtypes.ReconciliationRequest) error {
-	rr.Manifests = []odhtypes.ManifestInfo{defaultManifestInfo(rr.Release.Name)}
+	// Detect platform dynamically at reconciliation time
+	platform, err := cluster.GetPlatform(ctx, rr.Client)
+	if err != nil {
+		// Fall back to startup-time platform if detection fails
+		platform = rr.Release.Name
+	}
+	
+	rr.Manifests = []odhtypes.ManifestInfo{defaultManifestInfo(platform)}
 
 	return nil
 }

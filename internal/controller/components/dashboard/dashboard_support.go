@@ -42,9 +42,10 @@ var (
 	}
 
 	overlaysSourcePaths = map[common.Platform]string{
-		cluster.SelfManagedRhoai: "/rhoai/onprem",
-		cluster.ManagedRhoai:     "/rhoai/addon",
-		cluster.OpenDataHub:      "/odh",
+		cluster.SelfManagedRhoai:   "/rhoai/onprem",
+		cluster.ManagedRhoai:       "/rhoai/addon",
+		cluster.OpenDataHub:        "/odh",
+		cluster.OpenDataHubGateway: "/odh-gateway",
 	}
 
 	imagesMap = map[string]string{
@@ -73,6 +74,7 @@ func computeKustomizeVariable(ctx context.Context, cli client.Client, platform c
 	return map[string]string{
 		"dashboard-url": baseConsoleURL[platform] + dscispec.ApplicationsNamespace + "." + consoleLinkDomain,
 		"section-title": sectionTitle[platform],
+		"dashboard-domain": consoleLinkDomain,
 	}, nil
 }
 

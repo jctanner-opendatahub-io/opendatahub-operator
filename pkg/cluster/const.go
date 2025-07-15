@@ -9,6 +9,8 @@ const (
 	SelfManagedRhoai common.Platform = "OpenShift AI Self-Managed"
 	// OpenDataHub defines display name in csv.
 	OpenDataHub common.Platform = "Open Data Hub"
+	// OpenDataHubGateway defines Gateway API variant of OpenDataHub.
+	OpenDataHubGateway common.Platform = "Open Data Hub Gateway API"
 
 	// DefaultNotebooksNamespaceODH defines default namespace for notebooks.
 	DefaultNotebooksNamespaceODH = "opendatahub"

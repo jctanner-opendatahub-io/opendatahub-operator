@@ -41,6 +41,22 @@ package datasciencecluster
 // +kubebuilder:rbac:groups="networking.k8s.io",resources=networkpolicies,verbs=get;create;list;watch;delete;update;patch
 // +kubebuilder:rbac:groups="networking.k8s.io",resources=ingresses,verbs=create;delete;list;update;watch;patch;get
 
+// Gateway API permissions
+// +kubebuilder:rbac:groups="gateway.networking.k8s.io",resources=gateways,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="gateway.networking.k8s.io",resources=httproutes,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="gateway.networking.k8s.io",resources=referencegrants,verbs=get;list;watch;create;update;patch;delete
+
+// cert-manager permissions for Gateway API
+// +kubebuilder:rbac:groups="cert-manager.io",resources=certificates,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="cert-manager.io",resources=certificaterequests,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="cert-manager.io",resources=issuers,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="cert-manager.io",resources=clusterissuers,verbs=get;list;watch;create;update;patch;delete
+
+// Gateway service permissions
+// +kubebuilder:rbac:groups="services.platform.opendatahub.io",resources=gateways,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="services.platform.opendatahub.io",resources=gateways/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups="services.platform.opendatahub.io",resources=gateways/finalizers,verbs=update
+
 // +kubebuilder:rbac:groups="machinelearning.seldon.io",resources=seldondeployments,verbs=*
 
 // +kubebuilder:rbac:groups="machine.openshift.io",resources=machinesets,verbs=list;patch;delete;get

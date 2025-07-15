@@ -91,6 +91,29 @@ IMAGE_BUILD_FLAGS ?= --build-arg USE_LOCAL=$(USE_LOCAL)
 IMAGE_BUILD_FLAGS += --build-arg CGO_ENABLED=$(CGO_ENABLED)
 IMAGE_BUILD_FLAGS += --platform $(PLATFORM)
 
+# Fork, local checkout, and branch support for manifests
+FORK_ORG ?= 
+LOCAL_MODE ?= false
+LOCAL_CHECKOUTS_DIR ?= ../src
+BRANCH_NAME ?= 
+
+# Custom registry configuration - set via environment variables
+CUSTOM_REGISTRY_URL ?= 
+CUSTOM_REGISTRY_NAMESPACE ?= 
+CUSTOM_REGISTRY_TAG ?= 
+
+# Construct manifest script arguments
+MANIFEST_ARGS = 
+ifneq ($(FORK_ORG),)
+    MANIFEST_ARGS += --fork-org=$(FORK_ORG)
+endif
+ifeq ($(LOCAL_MODE),true)
+    MANIFEST_ARGS += --local-mode --local-checkouts-dir=$(LOCAL_CHECKOUTS_DIR)
+endif
+ifneq ($(BRANCH_NAME),)
+    MANIFEST_ARGS += --branch=$(BRANCH_NAME)
+endif
+
 # Prometheus-Unit Tests Parameters
 PROMETHEUS_CONFIG_YAML = ./config/monitoring/prometheus/apps/prometheus-configs.yaml
 PROMETHEUS_CONFIG_DIR = ./config/monitoring/prometheus/apps
@@ -174,8 +197,48 @@ lint-fix: golangci-lint ## Run golangci-lint against code.
 
 .PHONY: get-manifests
 get-manifests: ## Fetch components manifests from remote git repo
-	./get_all_manifests.sh
+	GIT_TERMINAL_PROMPT=0 GIT_ASKPASS="" SSH_ASKPASS="" ./get_all_manifests.sh $(MANIFEST_ARGS)
 CLEANFILES += opt/manifests/*
+
+.PHONY: get-manifests-fork
+get-manifests-fork: ## Fetch manifests using fork organization from environment
+	@if [ -z "$(FORK_ORG)" ]; then \
+		echo "Error: FORK_ORG environment variable not set"; \
+		exit 1; \
+	fi
+	$(MAKE) get-manifests FORK_ORG=$(FORK_ORG)
+
+.PHONY: get-manifests-fork-branch
+get-manifests-fork-branch: ## Fetch manifests using fork organization and branch from environment
+	@if [ -z "$(FORK_ORG)" ]; then \
+		echo "Error: FORK_ORG environment variable not set"; \
+		exit 1; \
+	fi
+	@if [ -z "$(BRANCH_NAME)" ]; then \
+		echo "Error: BRANCH_NAME environment variable not set"; \
+		exit 1; \
+	fi
+	$(MAKE) get-manifests FORK_ORG=$(FORK_ORG) BRANCH_NAME=$(BRANCH_NAME)
+
+.PHONY: get-manifests-local
+get-manifests-local: ## Fetch manifests using local checkouts from environment
+	@if [ -z "$(FORK_ORG)" ]; then \
+		echo "Error: FORK_ORG environment variable not set"; \
+		exit 1; \
+	fi
+	$(MAKE) get-manifests FORK_ORG=$(FORK_ORG) LOCAL_MODE=true LOCAL_CHECKOUTS_DIR=../
+
+.PHONY: get-manifests-local-branch
+get-manifests-local-branch: ## Fetch manifests using local checkouts and branch from environment
+	@if [ -z "$(FORK_ORG)" ]; then \
+		echo "Error: FORK_ORG environment variable not set"; \
+		exit 1; \
+	fi
+	@if [ -z "$(BRANCH_NAME)" ]; then \
+		echo "Error: BRANCH_NAME environment variable not set"; \
+		exit 1; \
+	fi
+	$(MAKE) get-manifests FORK_ORG=$(FORK_ORG) BRANCH_NAME=$(BRANCH_NAME) LOCAL_MODE=true LOCAL_CHECKOUTS_DIR=../
 
 .PHONY: api-docs
 api-docs: crd-ref-docs ## Creates API docs using https://github.com/elastic/crd-ref-docs
@@ -208,7 +271,118 @@ run-nowebhook: manifests generate fmt vet ## Run a controller from your host wit
 
 .PHONY: image-build
 image-build: # unit-test ## Build image with the manager.
+	@echo "Executing: $(IMAGE_BUILDER) buildx build --no-cache -f Dockerfiles/Dockerfile ${IMAGE_BUILD_FLAGS} -t $(IMG) ."
 	$(IMAGE_BUILDER) buildx build --no-cache -f Dockerfiles/Dockerfile ${IMAGE_BUILD_FLAGS} -t $(IMG) .
+
+.PHONY: image-build-fork
+image-build-fork: ## Build image using fork organization from environment
+	@if [ -z "$(FORK_ORG)" ]; then \
+		echo "Error: FORK_ORG environment variable not set"; \
+		exit 1; \
+	fi
+	@echo "Fork organization: $(FORK_ORG)"
+	@FINAL_BUILD_FLAGS="$(IMAGE_BUILD_FLAGS) --build-arg FORK_ORG=$(FORK_ORG)"; \
+	echo "Executing: $(MAKE) image-build IMAGE_BUILD_FLAGS=\"$$FINAL_BUILD_FLAGS\""; \
+	$(MAKE) image-build IMAGE_BUILD_FLAGS="$$FINAL_BUILD_FLAGS"
+
+.PHONY: image-build-fork-branch
+image-build-fork-branch: ## Build image using fork organization and branch from environment
+	@if [ -z "$(FORK_ORG)" ]; then \
+		echo "Error: FORK_ORG environment variable not set"; \
+		exit 1; \
+	fi
+	@if [ -z "$(BRANCH_NAME)" ]; then \
+		echo "Error: BRANCH_NAME environment variable not set"; \
+		exit 1; \
+	fi
+	@echo "Fork organization: $(FORK_ORG)"
+	@echo "Branch name: $(BRANCH_NAME)"
+	@FINAL_BUILD_FLAGS="$(IMAGE_BUILD_FLAGS) --build-arg FORK_ORG=$(FORK_ORG) --build-arg BRANCH_NAME=$(BRANCH_NAME)"; \
+	echo "Executing: $(MAKE) image-build IMAGE_BUILD_FLAGS=\"$$FINAL_BUILD_FLAGS\""; \
+	$(MAKE) image-build IMAGE_BUILD_FLAGS="$$FINAL_BUILD_FLAGS"
+
+.PHONY: image-build-local
+image-build-local: ## Build image using local checkouts from environment
+	@if [ -z "$(FORK_ORG)" ]; then \
+		echo "Error: FORK_ORG environment variable not set"; \
+		exit 1; \
+	fi
+	@echo "Fork organization: $(FORK_ORG)"
+	@echo "Pre-populating manifests from local checkouts..."
+	@$(MAKE) get-manifests-local
+	@echo "Building with pre-populated manifests"
+	@FULL_COMMAND="$(IMAGE_BUILDER) buildx build --no-cache -f Dockerfiles/Dockerfile $(IMAGE_BUILD_FLAGS) --build-arg USE_LOCAL=true --build-arg LOCAL_MODE=true -t $(IMG) ."; \
+	echo "Executing: $$FULL_COMMAND"; \
+	$(IMAGE_BUILDER) buildx build --no-cache -f Dockerfiles/Dockerfile \
+	$(IMAGE_BUILD_FLAGS) \
+	--build-arg USE_LOCAL=true \
+	--build-arg LOCAL_MODE=true \
+	-t $(IMG) .
+
+.PHONY: image-build-local-branch
+image-build-local-branch: ## Build image using local checkouts and branch from environment
+	@if [ -z "$(FORK_ORG)" ]; then \
+		echo "Error: FORK_ORG environment variable not set"; \
+		exit 1; \
+	fi
+	@if [ -z "$(BRANCH_NAME)" ]; then \
+		echo "Error: BRANCH_NAME environment variable not set"; \
+		exit 1; \
+	fi
+	@echo "Fork organization: $(FORK_ORG)"
+	@echo "Branch name: $(BRANCH_NAME)"
+	@echo "Pre-populating manifests from local checkouts using branch $(BRANCH_NAME)..."
+	@$(MAKE) get-manifests-local-branch
+	@echo "Building with pre-populated manifests"
+	@FULL_COMMAND="$(IMAGE_BUILDER) buildx build --no-cache -f Dockerfiles/Dockerfile $(IMAGE_BUILD_FLAGS) --build-arg USE_LOCAL=true --build-arg LOCAL_MODE=true -t $(IMG) ."; \
+	echo "Executing: $$FULL_COMMAND"; \
+	$(IMAGE_BUILDER) buildx build --no-cache -f Dockerfiles/Dockerfile \
+	$(IMAGE_BUILD_FLAGS) \
+	--build-arg USE_LOCAL=true \
+	--build-arg LOCAL_MODE=true \
+	-t $(IMG) .
+
+.PHONY: image-build-custom-registry
+image-build-custom-registry: ## Build image using custom registry from environment
+	@if [ -z "$(CUSTOM_REGISTRY_URL)" ] || [ -z "$(CUSTOM_REGISTRY_NAMESPACE)" ] || [ -z "$(CUSTOM_REGISTRY_TAG)" ]; then \
+		echo "Error: CUSTOM_REGISTRY_URL, CUSTOM_REGISTRY_NAMESPACE, and CUSTOM_REGISTRY_TAG environment variables must be set"; \
+		exit 1; \
+	fi
+	@CUSTOM_IMG="$(CUSTOM_REGISTRY_URL)/$(CUSTOM_REGISTRY_NAMESPACE)/odh-operator:$(CUSTOM_REGISTRY_TAG)"; \
+	echo "Building image: $$CUSTOM_IMG"; \
+	FULL_COMMAND="$(IMAGE_BUILDER) buildx build --no-cache -f Dockerfiles/Dockerfile $(IMAGE_BUILD_FLAGS) -t $$CUSTOM_IMG ."; \
+	echo "Executing: $$FULL_COMMAND"; \
+	$(MAKE) image-build IMG="$$CUSTOM_IMG"
+
+.PHONY: image-build-custom-registry-local
+image-build-custom-registry-local: ## Build image using custom registry and local checkouts from environment
+	@if [ -z "$(CUSTOM_REGISTRY_URL)" ] || [ -z "$(CUSTOM_REGISTRY_NAMESPACE)" ] || [ -z "$(CUSTOM_REGISTRY_TAG)" ]; then \
+		echo "Error: CUSTOM_REGISTRY_URL, CUSTOM_REGISTRY_NAMESPACE, and CUSTOM_REGISTRY_TAG environment variables must be set"; \
+		exit 1; \
+	fi
+	@CUSTOM_IMG="$(CUSTOM_REGISTRY_URL)/$(CUSTOM_REGISTRY_NAMESPACE)/odh-operator:$(CUSTOM_REGISTRY_TAG)"; \
+	echo "Building image with local checkouts: $$CUSTOM_IMG"; \
+	$(MAKE) image-build-local IMG="$$CUSTOM_IMG"
+
+.PHONY: image-build-custom-registry-local-branch
+image-build-custom-registry-local-branch: ## Build image using custom registry, local checkouts, and branch from environment
+	@if [ -z "$(CUSTOM_REGISTRY_URL)" ] || [ -z "$(CUSTOM_REGISTRY_NAMESPACE)" ] || [ -z "$(CUSTOM_REGISTRY_TAG)" ]; then \
+		echo "Error: CUSTOM_REGISTRY_URL, CUSTOM_REGISTRY_NAMESPACE, and CUSTOM_REGISTRY_TAG environment variables must be set"; \
+		exit 1; \
+	fi
+	@CUSTOM_IMG="$(CUSTOM_REGISTRY_URL)/$(CUSTOM_REGISTRY_NAMESPACE)/odh-operator:$(CUSTOM_REGISTRY_TAG)"; \
+	echo "Building image with local checkouts and branch: $$CUSTOM_IMG"; \
+	$(MAKE) image-build-local-branch IMG="$$CUSTOM_IMG"
+
+.PHONY: image-push-custom-registry
+image-push-custom-registry: ## Push image to custom registry from environment
+	@if [ -z "$(CUSTOM_REGISTRY_URL)" ] || [ -z "$(CUSTOM_REGISTRY_NAMESPACE)" ] || [ -z "$(CUSTOM_REGISTRY_TAG)" ]; then \
+		echo "Error: CUSTOM_REGISTRY_URL, CUSTOM_REGISTRY_NAMESPACE, and CUSTOM_REGISTRY_TAG environment variables must be set"; \
+		exit 1; \
+	fi
+	@CUSTOM_IMG="$(CUSTOM_REGISTRY_URL)/$(CUSTOM_REGISTRY_NAMESPACE)/odh-operator:$(CUSTOM_REGISTRY_TAG)"; \
+	echo "Pushing image: $$CUSTOM_IMG"; \
+	$(MAKE) image-push IMG="$$CUSTOM_IMG"
 
 .PHONY: image-push
 image-push: ## Push image with the manager.
