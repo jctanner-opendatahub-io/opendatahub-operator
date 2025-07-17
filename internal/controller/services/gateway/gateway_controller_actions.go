@@ -33,7 +33,8 @@ import (
 )
 
 const (
-	GatewayTemplate = "resources/gateway.tmpl.yaml"
+	GatewayTemplate      = "resources/gateway.tmpl.yaml"
+	GatewayClassTemplate = "resources/gateway-class.tmpl.yaml"
 )
 
 //go:embed resources
@@ -68,7 +69,11 @@ func initialize(ctx context.Context, rr *odhtypes.ReconciliationRequest) error {
 	rr.Templates = []odhtypes.TemplateInfo{
 		{
 			FS:   resourcesFS,
-			Path: GatewayTemplate, // likely needs to be "resources/gateway.tmpl.yaml"
+			Path: GatewayClassTemplate,
+		},
+		{
+			FS:   resourcesFS,
+			Path: GatewayTemplate,
 		},
 	}
 
