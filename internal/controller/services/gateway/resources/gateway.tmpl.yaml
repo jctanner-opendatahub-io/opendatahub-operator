@@ -2,7 +2,8 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: odh-gateway
-  namespace: opendatahub
+  # The Gateway object must be created in the openshift-ingress namespace.
+  namespace: openshift-ingress
   labels:
     app.kubernetes.io/name: odh-gateway
     app.kubernetes.io/component: gateway
@@ -10,18 +11,18 @@ metadata:
   annotations:
     opendatahub.io/managed: "true"
 spec:
-  gatewayClassName: istio
+  gatewayClassName: odh-gateway-class
   listeners:
-  - name: http
-    port: 80
-    protocol: HTTP
-    hostname: "*.odh.apps-crc.testing"
-    allowedRoutes:
-      namespaces:
-        from: Selector
-        selector:
-          matchLabels:
-            opendatahub.io/gateway-enabled: "true"
+  #- name: http
+  #  port: 80
+  #  protocol: HTTP
+  #  hostname: "*.odh.apps-crc.testing"
+  #  allowedRoutes:
+  #    namespaces:
+  #      from: Selector
+  #      selector:
+  #        matchLabels:
+  #          opendatahub.io/gateway-enabled: "true"
   - name: https
     port: 443
     protocol: HTTPS
@@ -33,7 +34,4 @@ spec:
         kind: Secret
     allowedRoutes:
       namespaces:
-        from: Selector
-        selector:
-          matchLabels:
-            opendatahub.io/gateway-enabled: "true"
+        from: All
