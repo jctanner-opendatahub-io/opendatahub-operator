@@ -66,6 +66,7 @@ func (h *serviceHandler) NewReconciler(ctx context.Context, mgr ctrl.Manager) er
 		Owns(&gwapiv1.GatewayClass{}).
 		Owns(&corev1.Secret{}).
 		Owns(&certmanagerv1.Certificate{}).
+		Owns(&certmanagerv1.ClusterIssuer{}).
 		// actions
 		WithAction(initialize).
 		WithAction(createCertificateResources).

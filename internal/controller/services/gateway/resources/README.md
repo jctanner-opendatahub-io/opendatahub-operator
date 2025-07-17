@@ -4,6 +4,15 @@ This directory contains resource templates for the OpenDataHub Gateway service, 
 
 ## Templates
 
+### cluster-issuer.tmpl.yaml
+
+Creates a ClusterIssuer resource for certificate management:
+
+- **Self-Signed Certificates**: Uses cert-manager to generate self-signed certificates
+- **Default Issuer**: Named `odh-gateway-issuer` (matches controller defaults)
+- **Development/Testing**: Suitable for non-production environments
+- **Automatic Management**: Lifecycle managed by the gateway controller
+
 ### gateway.tmpl.yaml
 
 Creates a Gateway API Gateway resource with the following features:

@@ -33,8 +33,9 @@ import (
 )
 
 const (
-	GatewayTemplate      = "resources/gateway.tmpl.yaml"
-	GatewayClassTemplate = "resources/gateway-class.tmpl.yaml"
+	GatewayTemplate       = "resources/gateway.tmpl.yaml"
+	GatewayClassTemplate  = "resources/gateway-class.tmpl.yaml"
+	ClusterIssuerTemplate = "resources/cluster-issuer.tmpl.yaml"
 )
 
 //go:embed resources
@@ -66,15 +67,18 @@ func initialize(ctx context.Context, rr *odhtypes.ReconciliationRequest) error {
 		}
 	}
 
+	// Deploy ClusterIssuer and GatewayClass first, Gateway last
+	// This ensures certificate infrastructure is ready before Gateway references secrets
 	rr.Templates = []odhtypes.TemplateInfo{
+		{
+			FS:   resourcesFS,
+			Path: ClusterIssuerTemplate,
+		},
 		{
 			FS:   resourcesFS,
 			Path: GatewayClassTemplate,
 		},
-		{
-			FS:   resourcesFS,
-			Path: GatewayTemplate,
-		},
+		// Gateway template added later after certificate resources are created
 	}
 
 	return nil
@@ -139,6 +143,13 @@ func createCertificateResources(ctx context.Context, rr *odhtypes.Reconciliation
 	// Only create cert-manager resources if certificate type is CertManager
 	if gatewayInstance.Spec.Certificate == nil || gatewayInstance.Spec.Certificate.Type != serviceApi.CertManagerCertificate {
 		log.Info("Skipping cert-manager certificate creation", "certificateType", gatewayInstance.Spec.Certificate)
+
+		// Still need to add Gateway template even when skipping cert-manager
+		rr.Templates = append(rr.Templates, odhtypes.TemplateInfo{
+			FS:   resourcesFS,
+			Path: GatewayTemplate,
+		})
+
 		return nil
 	}
 
@@ -169,7 +180,7 @@ func createCertificateResources(ctx context.Context, rr *odhtypes.Reconciliation
 	certificate := &certmanagerv1.Certificate{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      certName,
-			Namespace: rr.DSCI.Spec.ApplicationsNamespace,
+			Namespace: "openshift-ingress",
 			Labels: map[string]string{
 				"app.kubernetes.io/name":       "odh-gateway",
 				"app.kubernetes.io/component":  "gateway",
@@ -208,5 +219,12 @@ func createCertificateResources(ctx context.Context, rr *odhtypes.Reconciliation
 	}
 
 	log.Info("cert-manager Certificate created successfully", "certificate", certificate.Name, "secretName", certificate.Spec.SecretName)
+
+	// Add Gateway template after Certificate is created to ensure proper ordering
+	rr.Templates = append(rr.Templates, odhtypes.TemplateInfo{
+		FS:   resourcesFS,
+		Path: GatewayTemplate,
+	})
+
 	return nil
 }
