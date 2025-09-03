@@ -1,0 +1,29 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{.GatewayName}}
+  namespace: "openshift-ingress"
+  labels:
+    {{- range $key, $value := .GatewayLabels}}
+    {{$key}}: "{{$value}}"
+    {{- end}}
+  annotations:
+    # Enable automatic certificate generation via OpenShift service-ca
+    service.beta.openshift.io/serving-cert-secret-name: "{{.GatewayName}}-tls"
+spec:
+  gatewayClassName: {{.GatewayClassName}}
+  listeners:
+  - name: https
+    port: 443
+    protocol: HTTPS
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - name: "{{.GatewayName}}-tls"
+        kind: Secret
+    allowedRoutes:
+      namespaces:
+        from: All
+      kinds:
+      - kind: HTTPRoute
+        group: gateway.networking.k8s.io

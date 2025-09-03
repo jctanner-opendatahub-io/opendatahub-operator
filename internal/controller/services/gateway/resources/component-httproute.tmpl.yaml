@@ -1,0 +1,84 @@
+# HTTPRoute template for ODH component routing
+# This template will be used for migrating components from Routes to HTTPRoutes
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{.ComponentName}}-route
+  namespace: {{.Namespace}}
+  labels:
+    {{- range $key, $value := .GatewayLabels}}
+    {{$key}}: "{{$value}}"
+    {{- end}}
+    app.kubernetes.io/component: {{.ComponentName}}
+    opendatahub.io/component: {{.ComponentName}}
+spec:
+  # Parent Gateway reference
+  parentRefs:
+  - name: {{.GatewayName}}
+    namespace: "openshift-ingress"
+    sectionName: "https"
+  
+  # Hostname matching - inherits from Gateway (no restriction)
+  
+  # Routing rules
+  rules:
+  - matches:
+    # Path-based routing for the component
+    - path:
+        type: PathPrefix
+        value: "/{{.ComponentName}}"
+    
+    # Optional: Strip path prefix before forwarding to service
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path:
+          type: ReplacePrefixMatch
+          replacePrefixMatch: "/"
+    
+    # Backend service configuration
+    backendRefs:
+    - name: {{.ServiceName}}
+      port: {{.ServicePort}}
+      weight: 100
+      
+      # Optional: Namespace reference if service is in different namespace
+      {{- if ne .ServiceNamespace .Namespace}}
+      namespace: {{.ServiceNamespace}}
+      {{- end}}
+  
+  {{- if .HealthPath}}
+  # Optional: Health check route (if component has health endpoint)
+  - matches:
+    - path:
+        type: Exact
+        value: "/{{.ComponentName}}/health"
+    backendRefs:
+    - name: {{.ServiceName}}
+      port: {{.ServicePort}}
+      weight: 100
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path:
+          type: ReplaceFullPath
+          replaceFullPath: "{{.HealthPath}}"
+  {{- end}}
+  
+  {{- if .APIPath}}
+  # Optional: API route (if component has API endpoints)
+  - matches:
+    - path:
+        type: PathPrefix
+        value: "/{{.ComponentName}}/api"
+    backendRefs:
+    - name: {{.ServiceName}}
+      port: {{.ServicePort}}
+      weight: 100
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path:
+          type: ReplacePrefixMatch
+          replacePrefixMatch: "{{.APIPath}}"
+  {{- end}}

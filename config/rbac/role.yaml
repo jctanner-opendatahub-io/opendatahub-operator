@@ -8,8 +8,10 @@ rules:
   - ""
   resources:
   - clusterversions
+  - groups
   - nodes
   - rhmis
+  - users
   verbs:
   - get
   - list
@@ -143,6 +145,11 @@ rules:
   - apps
   resources:
   - deployments
+  verbs:
+  - '*'
+- apiGroups:
+  - apps
+  resources:
   - deployments/finalizers
   - replicasets
   - statefulsets
@@ -525,6 +532,30 @@ rules:
   - patch
   - update
 - apiGroups:
+  - gateway.networking.k8s.io
+  resources:
+  - gatewayclasses
+  - gateways
+  - httproutes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - gateway.networking.k8s.io
+  resources:
+  - gatewayclasses/status
+  - gateways/status
+  - httproutes/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - image.openshift.io
   resources:
   - imagestreams
@@ -793,6 +824,11 @@ rules:
   - networking.istio.io
   resources:
   - envoyfilters
+  verbs:
+  - '*'
+- apiGroups:
+  - networking.istio.io
+  resources:
   - gateways
   - virtualservices
   verbs:
@@ -831,6 +867,15 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - oauth.openshift.io
+  resources:
+  - oauthaccesstokens
+  verbs:
+  - create
+  - delete
+  - get
+  - list
 - apiGroups:
   - oauth.openshift.io
   resources:
@@ -914,6 +959,14 @@ rules:
   - get
   - list
   - patch
+  - watch
+- apiGroups:
+  - operator.openshift.io
+  resources:
+  - kubeapiservers
+  verbs:
+  - get
+  - list
   - watch
 - apiGroups:
   - operators.coreos.com
@@ -1035,6 +1088,7 @@ rules:
   - services.platform.opendatahub.io
   resources:
   - auths
+  - gateways
   - monitorings
   - servicemeshes
   verbs:
@@ -1057,10 +1111,18 @@ rules:
   - services.platform.opendatahub.io
   resources:
   - auths/status
+  - gateways/status
   - monitorings/status
   - servicemeshes/status
   verbs:
   - get
+  - patch
+  - update
+- apiGroups:
+  - services.platform.opendatahub.io
+  resources:
+  - gateways/finalizers
+  verbs:
   - patch
   - update
 - apiGroups:

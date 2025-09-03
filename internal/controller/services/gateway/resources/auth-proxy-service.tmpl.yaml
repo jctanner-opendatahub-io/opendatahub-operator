@@ -1,0 +1,100 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{.AuthProxyName}}
+  namespace: {{.Namespace}}
+  labels:
+    {{- range $key, $value := .GatewayLabels}}
+    {{- if ne $key "app.kubernetes.io/component"}}
+    {{$key}}: "{{$value}}"
+    {{- end}}
+    {{- end}}
+    app.kubernetes.io/component: auth-proxy
+  annotations:
+    # Enable automatic serving certificate generation for HTTPS
+    service.beta.openshift.io/serving-cert-secret-name: {{.AuthProxyName}}-serving-cert
+    # Service monitor annotations for metrics scraping
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8081"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  ports:
+  # Main authentication port - used by Envoy ext_authz
+  - name: auth-port
+    port: 8080
+    targetPort: auth-port
+    protocol: TCP
+  # Metrics port - used for monitoring and health checks
+  - name: metrics
+    port: 8081
+    targetPort: metrics
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: {{.AuthProxyName}}
+    app.kubernetes.io/component: auth-proxy
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{.AuthProxyName}}
+  namespace: {{.Namespace}}
+  labels:
+    {{- range $key, $value := .GatewayLabels}}
+    {{- if ne $key "app.kubernetes.io/component"}}
+    {{$key}}: "{{$value}}"
+    {{- end}}
+    {{- end}}
+    app.kubernetes.io/component: auth-proxy
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{.AuthProxyName}}
+  labels:
+    {{- range $key, $value := .GatewayLabels}}
+    {{- if ne $key "app.kubernetes.io/component"}}
+    {{$key}}: "{{$value}}"
+    {{- end}}
+    {{- end}}
+    app.kubernetes.io/component: auth-proxy
+rules:
+# Permissions for token validation and user lookup
+- apiGroups: [""]
+  resources: ["users", "groups"]
+  verbs: ["get", "list"]
+- apiGroups: ["user.openshift.io"]
+  resources: ["users", "groups"]
+  verbs: ["get", "list"]
+- apiGroups: ["authentication.k8s.io"]
+  resources: ["tokenreviews"]
+  verbs: ["create"]
+- apiGroups: ["authorization.k8s.io"] 
+  resources: ["subjectaccessreviews"]
+  verbs: ["create"]
+{{- if eq .AuthMode "IntegratedOAuth"}}
+# Additional permissions for OpenShift OAuth token validation
+- apiGroups: ["oauth.openshift.io"]
+  resources: ["oauthaccesstokens"]
+  verbs: ["get", "list", "create", "delete"]
+{{- end}}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{.AuthProxyName}}
+  labels:
+    {{- range $key, $value := .GatewayLabels}}
+    {{- if ne $key "app.kubernetes.io/component"}}
+    {{$key}}: "{{$value}}"
+    {{- end}}
+    {{- end}}
+    app.kubernetes.io/component: auth-proxy
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{.AuthProxyName}}
+subjects:
+- kind: ServiceAccount
+  name: {{.AuthProxyName}}
+  namespace: {{.Namespace}}

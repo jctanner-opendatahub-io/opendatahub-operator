@@ -14,7 +14,20 @@ spec:
     singular: route
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .status.ingress[0].host
+      name: Host
+      type: string
+    - jsonPath: .status.ingress[0].conditions[?(@.type=="Admitted")].status
+      name: Admitted
+      type: string
+    - jsonPath: .spec.to.name
+      name: Service
+      type: string
+    - jsonPath: .spec.tls.type
+      name: TLS
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         description: |-
@@ -104,6 +117,10 @@ spec:
                   type: object
                 maxItems: 3
                 type: array
+                x-kubernetes-list-map-keys:
+                - name
+                - kind
+                x-kubernetes-list-type: map
               host:
                 description: |-
                   host is an alias/DNS that points to the service. Optional.
@@ -433,6 +450,8 @@ spec:
                       chain. Do not include a CA certificate. The secret referenced should
                       be present in the same namespace as that of the Route.
                       Forbidden when `certificate` is set.
+                      The router service account needs to be granted with read-only access to this secret,
+                      please refer to openshift docs for additional details.
                     properties:
                       name:
                         description: |-
@@ -446,8 +465,12 @@ spec:
                       insecureEdgeTerminationPolicy indicates the desired behavior for insecure connections to a route. While
                       each router may make its own decisions on which ports to expose, this is normally port 80.
 
-                      * Allow - traffic is sent to the server on the insecure port (edge/reencrypt terminations only) (default).
-                      * None - no traffic is allowed on the insecure port.
+                      If a route does not specify insecureEdgeTerminationPolicy, then the default behavior is "None".
+
+                      * Allow - traffic is sent to the server on the insecure port (edge/reencrypt terminations only).
+
+                      * None - no traffic is allowed on the insecure port (default).
+
                       * Redirect - clients are redirected to the secure port.
                     enum:
                     - Allow
@@ -543,7 +566,7 @@ spec:
                     a route is exposed.
                   properties:
                     conditions:
-                      description: Conditions is the state of the route, may be empty.
+                      description: conditions is the state of the route, may be empty.
                       items:
                         description: |-
                           RouteIngressCondition contains details for the current condition of this route on a particular
@@ -565,21 +588,24 @@ spec:
                             type: string
                           status:
                             description: |-
-                              Status is the status of the condition.
+                              status is the status of the condition.
                               Can be True, False, Unknown.
                             type: string
                           type:
                             description: |-
-                              Type is the type of the condition.
-                              Currently only Admitted.
+                              type is the type of the condition.
+                              Currently only Admitted or UnservableInFutureVersions.
                             type: string
                         required:
                         - status
                         - type
                         type: object
                       type: array
+                      x-kubernetes-list-map-keys:
+                      - type
+                      x-kubernetes-list-type: map
                     host:
-                      description: Host is the host string under which the route is
+                      description: host is the host string under which the route is
                         exposed; this value is required
                       type: string
                     routerCanonicalHostname:
@@ -597,6 +623,7 @@ spec:
                       type: string
                   type: object
                 type: array
+                x-kubernetes-list-type: atomic
             type: object
         required:
         - spec

@@ -1,0 +1,12 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: {{.GatewayClassName}}
+  labels:
+    {{- range $key, $value := .GatewayLabels}}
+    {{$key}}: "{{$value}}"
+    {{- end}}
+spec:
+  # Use OpenShift Gateway controller as specified in design document
+  controllerName: "openshift.io/gateway-controller/v1"
+  description: "OpenDataHub Gateway Class for unified ingress"

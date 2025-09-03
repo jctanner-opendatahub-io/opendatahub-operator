@@ -36,7 +36,7 @@ spec:
           extra:
             additionalProperties:
               type: string
-            description: Extra holds extra information about this identity
+            description: extra holds extra information about this identity
             type: object
           kind:
             description: |-
@@ -49,15 +49,15 @@ spec:
           metadata:
             type: object
           providerName:
-            description: ProviderName is the source of identity information
+            description: providerName is the source of identity information
             type: string
           providerUserName:
-            description: ProviderUserName uniquely represents this identity in the
+            description: providerUserName uniquely represents this identity in the
               scope of the provider
             type: string
           user:
             description: |-
-              User is a reference to the user this identity is associated with
+              user is a reference to the user this identity is associated with
               Both Name and UID must be set
             properties:
               apiVersion:

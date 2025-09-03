@@ -1,0 +1,120 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{.AuthProxyName}}
+  namespace: {{.Namespace}}
+  labels:
+    {{- range $key, $value := .GatewayLabels}}
+    {{- if ne $key "app.kubernetes.io/component"}}
+    {{$key}}: "{{$value}}"
+    {{- end}}
+    {{- end}}
+    app.kubernetes.io/component: auth-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{.AuthProxyName}}
+      app.kubernetes.io/component: auth-proxy
+  template:
+    metadata:
+      labels:
+        {{- range $key, $value := .GatewayLabels}}
+        {{- if and (ne $key "app.kubernetes.io/component") (ne $key "app.kubernetes.io/name")}}
+        {{$key}}: "{{$value}}"
+        {{- end}}
+        {{- end}}
+        app.kubernetes.io/name: {{.AuthProxyName}}
+        app.kubernetes.io/component: auth-proxy
+    spec:
+      containers:
+      - name: auth-proxy
+        # Using known working kube-auth-proxy image
+        image: "registry.tannerjc.net/kube-auth-proxy:latest"
+        imagePullPolicy: IfNotPresent
+        # Override image's user ID to comply with OpenShift SCC
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000740000
+        ports:
+        - name: auth-port
+          containerPort: 8080
+          protocol: TCP
+        - name: metrics
+          containerPort: 8081
+          protocol: TCP
+        env:
+        - name: AUTH_MODE
+          value: "{{.AuthMode}}"
+        args:
+        {{- if eq .AuthMode "IntegratedOAuth"}}
+        - --provider=openshift
+        {{- else if eq .AuthMode "OIDC"}}
+        - --provider=oidc
+        - --oidc-issuer-url={{.Gateway.Spec.Auth.OIDC.IssuerURL}}
+        {{- end}}
+        - --http-address=0.0.0.0:8080
+        - --email-domain=*
+        - --upstream=static://200
+        - --skip-provider-button
+        - --ssl-insecure-skip-verify=true
+        - --pass-access-token=true
+        - --set-xauthrequest=true
+        {{- if eq .AuthMode "IntegratedOAuth"}}
+        - --client-id={{.AuthProxyName}}-oauth-client
+        - --client-secret={{.OAuthClientSecret}}
+        {{- else if eq .AuthMode "OIDC"}}
+        - --client-id={{.Gateway.Spec.Auth.OIDC.ClientID}}
+        - --client-secret={{.Gateway.Spec.Auth.OIDC.ClientSecret}}
+        {{- end}}
+        - --cookie-secret={{.OAuthClientSecret}}
+        volumeMounts:
+        - name: config
+          mountPath: /etc/auth-proxy
+          readOnly: true
+        - name: serving-cert
+          mountPath: /var/run/secrets/serving-cert
+          readOnly: true
+        {{- if eq .AuthMode "IntegratedOAuth"}}
+        - name: oauth-secrets
+          mountPath: /var/run/secrets/oauth
+          readOnly: true
+        {{- else if eq .AuthMode "OIDC"}}
+        - name: oidc-secrets
+          mountPath: /var/run/secrets/oidc
+          readOnly: true
+        {{- end}}
+
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+
+      volumes:
+      - name: config
+        configMap:
+          name: {{.AuthProxyName}}-config
+      - name: serving-cert
+        secret:
+          secretName: {{.AuthProxyName}}-serving-cert
+      {{- if eq .AuthMode "IntegratedOAuth"}}
+      - name: oauth-secrets
+        secret:
+          secretName: {{.AuthProxyName}}-oauth
+      {{- else if eq .AuthMode "OIDC"}}
+      - name: oidc-secrets
+        secret:
+          secretName: {{.Gateway.Spec.Auth.OIDC.ClientSecretRef.Name}}
+      {{- end}}
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+        operator: Equal
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/control-plane
+        operator: Equal

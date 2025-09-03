@@ -40,7 +40,7 @@ spec:
           metadata:
             type: object
           users:
-            description: Users is the list of users in this group.
+            description: users is the list of users in this group.
             items:
               type: string
             type: array

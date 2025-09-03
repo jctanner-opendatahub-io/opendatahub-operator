@@ -61,6 +61,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	ctrlmetrics "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	ctrlwebhook "sigs.k8s.io/controller-runtime/pkg/webhook"
+	gwapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/opendatahub-io/opendatahub-operator/v2/api/common"
 	componentApi "github.com/opendatahub-io/opendatahub-operator/v2/api/components/v1alpha1"
@@ -98,6 +99,7 @@ import (
 	_ "github.com/opendatahub-io/opendatahub-operator/v2/internal/controller/components/workbenches"
 	_ "github.com/opendatahub-io/opendatahub-operator/v2/internal/controller/services/auth"
 	_ "github.com/opendatahub-io/opendatahub-operator/v2/internal/controller/services/certconfigmapgenerator"
+	_ "github.com/opendatahub-io/opendatahub-operator/v2/internal/controller/services/gateway"
 	_ "github.com/opendatahub-io/opendatahub-operator/v2/internal/controller/services/monitoring"
 	_ "github.com/opendatahub-io/opendatahub-operator/v2/internal/controller/services/secretgenerator"
 	_ "github.com/opendatahub-io/opendatahub-operator/v2/internal/controller/services/servicemesh"
@@ -113,6 +115,7 @@ func init() { //nolint:gochecknoinits
 	utilruntime.Must(componentApi.AddToScheme(scheme))
 	utilruntime.Must(serviceApi.AddToScheme(scheme))
 	utilruntime.Must(infrastructurev1alpha1.AddToScheme(scheme))
+	utilruntime.Must(gwapiv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(dsciv1.AddToScheme(scheme))

@@ -1,0 +1,95 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: {{.GatewayName}}-authn-filter
+  namespace: openshift-ingress
+  labels:
+  {{- range $key, $value := .GatewayLabels }}
+  {{- if and (ne $key "app.kubernetes.io/component") (ne $key "app.kubernetes.io/name") }}
+    {{ $key }}: {{ $value }}
+  {{- end }}
+  {{- end }}
+    app.kubernetes.io/component: envoy-filter
+    app.kubernetes.io/name: {{.GatewayName}}-envoy-filter
+spec:
+  workloadSelector:
+    labels:
+      app.kubernetes.io/name: opendatahub-gateway
+  configPatches:
+  # Add ext_authz HTTP filter
+  - applyTo: HTTP_FILTER
+    match:
+      context: GATEWAY
+      listener:
+        filterChain:
+          filter:
+            name: "envoy.filters.network.http_connection_manager"
+            subFilter:
+              name: "envoy.filters.http.router"
+    patch:
+      operation: INSERT_BEFORE
+      value:
+        name: envoy.filters.http.ext_authz
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
+          transport_api_version: V3
+          http_service:
+            server_uri:
+              uri: http://{{.AuthProxyName}}.{{.Namespace}}.svc.cluster.local:8080/oauth2/auth
+              cluster: {{.AuthProxyName}}
+              timeout: 0.5s
+            authorization_request:
+              allowed_headers:
+                patterns:
+                - exact: cookie
+            authorization_response:
+              allowed_upstream_headers:
+                patterns:
+                - exact: x-auth-request-user
+                - exact: x-auth-request-email
+                - exact: x-auth-request-access-token
+              allowed_client_headers:
+                patterns:
+                - exact: set-cookie
+  # Add Lua filter for token forwarding
+  - applyTo: HTTP_FILTER
+    match:
+      context: GATEWAY
+      listener:
+        filterChain:
+          filter:
+            name: "envoy.filters.network.http_connection_manager"
+            subFilter:
+              name: "envoy.filters.http.router"
+    patch:
+      operation: INSERT_BEFORE
+      value:
+        name: envoy.lua
+        typed_config:
+          "@type": "type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua"
+          inline_code: |
+            function envoy_on_request(request_handle)
+              local access_token = request_handle:headers():get("x-auth-request-access-token")
+              if access_token then
+                request_handle:headers():add("x-forwarded-access-token", access_token)
+              end
+            end
+  # Add auth proxy cluster
+  - applyTo: CLUSTER
+    match:
+      context: GATEWAY
+    patch:
+      operation: ADD
+      value:
+        name: {{.AuthProxyName}}
+        type: STRICT_DNS
+        connect_timeout: 0.5s
+        load_assignment:
+          cluster_name: {{.AuthProxyName}}
+          endpoints:
+          - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    address: {{.AuthProxyName}}.{{.Namespace}}.svc.cluster.local
+                    port_value: 8080
