@@ -35,8 +35,7 @@ import (
 
 // === AUTHENTICATION MODE VALIDATION ===
 
-// validateAuthenticationConfiguration validates the Gateway authentication configuration
-// against the detected cluster authentication mode
+// against the detected cluster authentication mode.
 func validateAuthenticationConfiguration(_ context.Context, gateway *serviceApi.Gateway, detectedMode AuthenticationMode) error {
 	authSpec := gateway.Spec.Auth
 
@@ -53,7 +52,7 @@ func validateAuthenticationConfiguration(_ context.Context, gateway *serviceApi.
 	}
 }
 
-// validateAutoModeConfiguration validates configuration when using automatic detection
+// validateAutoModeConfiguration validates configuration when using automatic detection.
 func validateAutoModeConfiguration(detectedMode AuthenticationMode, authSpec serviceApi.GatewayAuthSpec) error {
 	switch detectedMode {
 	case ModeOIDC:
@@ -77,7 +76,7 @@ func validateAutoModeConfiguration(detectedMode AuthenticationMode, authSpec ser
 	}
 }
 
-// validateManualModeConfiguration validates configuration when using manual override
+// validateManualModeConfiguration validates configuration when using manual override.
 func validateManualModeConfiguration(authSpec serviceApi.GatewayAuthSpec) error {
 	if authSpec.ForceMode == nil {
 		return errors.New("manual authentication mode requires ForceMode to be specified")
@@ -97,25 +96,25 @@ func validateManualModeConfiguration(authSpec serviceApi.GatewayAuthSpec) error 
 
 	case ModeNone:
 		// Manual None mode - not supported yet
-		return fmt.Errorf("authentication mode 'None' not supported in manual mode")
+		return errors.New("authentication mode 'None' not supported in manual mode")
 
 	default:
 		return fmt.Errorf("invalid ForceMode: %s (must be 'IntegratedOAuth', 'OIDC', or 'None')", *authSpec.ForceMode)
 	}
 }
 
-// validateOIDCConfiguration validates OIDC provider configuration
+// validateOIDCConfiguration validates OIDC provider configuration.
 func validateOIDCConfiguration(oidcConfig *serviceApi.OIDCConfig) error {
 	if oidcConfig.IssuerURL == "" {
-		return fmt.Errorf("OIDC IssuerURL is required")
+		return errors.New("OIDC IssuerURL is required")
 	}
 
 	if oidcConfig.ClientSecretRef.Name == "" {
-		return fmt.Errorf("OIDC ClientSecretRef.Name is required")
+		return errors.New("OIDC ClientSecretRef.Name is required")
 	}
 
 	if oidcConfig.ClientSecretRef.Key == "" {
-		return fmt.Errorf("OIDC ClientSecretRef.Key is required")
+		return errors.New("OIDC ClientSecretRef.Key is required")
 	}
 
 	// TODO: Validate issuer URL format and accessibility
@@ -126,22 +125,22 @@ func validateOIDCConfiguration(oidcConfig *serviceApi.OIDCConfig) error {
 
 // === GATEWAY API UTILITIES ===
 
-// buildGatewayClassName generates a consistent GatewayClass name
+// buildGatewayClassName generates a consistent GatewayClass name.
 func buildGatewayClassName() string {
 	return "odh-gateway-class"
 }
 
-// buildGatewayName generates a consistent Gateway resource name
+// buildGatewayName generates a consistent Gateway resource name.
 func buildGatewayName() string {
 	return "odh-gateway"
 }
 
-// buildGatewayNamespace returns the namespace where Gateway resources should be created
+// buildGatewayNamespace returns the namespace where Gateway resources should be created.
 func buildGatewayNamespace() string {
 	return "openshift-ingress" // As specified in design document
 }
 
-// generateGatewayLabels creates standard labels for Gateway API resources
+// generateGatewayLabels creates standard labels for Gateway API resources.
 func generateGatewayLabels() map[string]string {
 	return map[string]string{
 		"app.kubernetes.io/name":       "opendatahub-gateway",
@@ -195,7 +194,7 @@ func getCertificateConfiguration(gateway *serviceApi.Gateway) (*CertificateConfi
 	return config, nil
 }
 
-// CertificateConfig represents certificate configuration for the gateway
+// CertificateConfig represents certificate configuration for the gateway.
 type CertificateConfig struct {
 	Type           string
 	SecretName     string
@@ -361,7 +360,7 @@ func validateRevisionOIDCConfig(ctx context.Context, coreClient kubernetes.Inter
 
 // === DOMAIN AND ROUTING UTILITIES ===
 
-// buildComponentRoute generates the route path for a specific ODH component
+// buildComponentRoute generates the route path for a specific ODH component.
 func buildComponentRoute(componentName string) string {
 	return fmt.Sprintf("/%s", componentName)
 }
@@ -377,7 +376,7 @@ func buildGatewayHostname(domain string) string {
 	return domain
 }
 
-// validateDomainConfiguration validates the domain configuration in Gateway spec
+// validateDomainConfiguration validates the domain configuration in Gateway spec.
 func validateDomainConfiguration(domain string) error {
 	if domain == "" {
 		return fmt.Errorf("domain configuration is required")
@@ -393,7 +392,7 @@ func validateDomainConfiguration(domain string) error {
 
 // === COMPONENT INTEGRATION UTILITIES ===
 
-// ComponentMigrationPlan represents a plan for migrating a component from Routes to HTTPRoutes
+// ComponentMigrationPlan represents a plan for migrating a component from Routes to HTTPRoutes.
 type ComponentMigrationPlan struct {
 	ComponentName string
 	RoutePath     string

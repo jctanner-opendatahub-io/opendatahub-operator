@@ -35,7 +35,7 @@ import (
 //go:embed resources
 var resourcesFS embed.FS
 
-// Constants for authentication and certificate configuration
+// Constants for authentication and certificate configuration.
 const (
 	AuthModeAuto     = "auto"
 	AuthModeManual   = "manual"
@@ -45,8 +45,8 @@ const (
 
 // === PHASE 1: AUTHENTICATION MODE DETECTION ===
 
-// detectAuthenticationMode determines the cluster's authentication configuration
-// Uses the AuthModeDetector from SPIKE-1 findings to identify IntegratedOAuth vs OIDC vs None
+// detectAuthenticationMode determines the cluster's authentication configuration.
+// Uses the AuthModeDetector from SPIKE-1 findings to identify IntegratedOAuth vs OIDC vs None.
 func detectAuthenticationMode(ctx context.Context, req *types.ReconciliationRequest) error {
 	logger := logf.FromContext(ctx)
 	gateway, ok := req.Instance.(*serviceApi.Gateway)
@@ -72,8 +72,8 @@ func detectAuthenticationMode(ctx context.Context, req *types.ReconciliationRequ
 	return nil
 }
 
-// validateOIDCRollout ensures OIDC configuration has fully rolled out before proceeding
-// Critical for preventing authentication failures during cluster auth transitions
+// validateOIDCRollout ensures OIDC configuration has fully rolled out before proceeding.
+// Critical for preventing authentication failures during cluster auth transitions.
 func validateOIDCRollout(ctx context.Context, req *types.ReconciliationRequest) error {
 	logger := logf.FromContext(ctx)
 	gateway, ok := req.Instance.(*serviceApi.Gateway)
@@ -118,7 +118,7 @@ func validateOIDCRollout(ctx context.Context, req *types.ReconciliationRequest) 
 	return nil
 }
 
-// updateAuthenticationStatus updates Gateway status with authentication configuration details
+// updateAuthenticationStatus updates Gateway status with authentication configuration details.
 func updateAuthenticationStatus(ctx context.Context, req *types.ReconciliationRequest) error {
 	logger := logf.FromContext(ctx)
 	gateway, ok := req.Instance.(*serviceApi.Gateway)
@@ -153,7 +153,7 @@ func updateAuthenticationStatus(ctx context.Context, req *types.ReconciliationRe
 
 // === PHASE 2: GATEWAY API INFRASTRUCTURE ===
 
-// createGatewayClass creates the GatewayClass resource with OpenShift Gateway controller
+// createGatewayClass creates the GatewayClass resource with OpenShift Gateway controller.
 func createGatewayClass(ctx context.Context, req *types.ReconciliationRequest) error {
 	logger := logf.FromContext(ctx)
 
@@ -170,7 +170,7 @@ func createGatewayClass(ctx context.Context, req *types.ReconciliationRequest) e
 	return nil
 }
 
-// createGateway creates the Gateway resource in openshift-ingress namespace
+// createGateway creates the Gateway resource in openshift-ingress namespace.
 func createGateway(ctx context.Context, req *types.ReconciliationRequest) error {
 	logger := logf.FromContext(ctx)
 	gateway, ok := req.Instance.(*serviceApi.Gateway)
@@ -199,7 +199,7 @@ func createGateway(ctx context.Context, req *types.ReconciliationRequest) error 
 	return nil
 }
 
-// waitForGatewayReady waits for the Gateway resource to be assigned an address
+// waitForGatewayReady waits for the Gateway resource to be assigned an address.
 func waitForGatewayReady(ctx context.Context, req *types.ReconciliationRequest) error {
 	logger := logf.FromContext(ctx)
 
@@ -225,7 +225,7 @@ func waitForGatewayReady(ctx context.Context, req *types.ReconciliationRequest) 
 
 // === PHASE 3: AUTHENTICATION PROXY INFRASTRUCTURE ===
 
-// deployAuthProxy deploys kube-auth-proxy with configuration based on detected auth mode
+// deployAuthProxy deploys kube-auth-proxy with configuration based on detected auth mode.
 func deployAuthProxy(ctx context.Context, req *types.ReconciliationRequest) error {
 	logger := logf.FromContext(ctx)
 	gateway, ok := req.Instance.(*serviceApi.Gateway)
@@ -275,7 +275,7 @@ func deployAuthProxy(ctx context.Context, req *types.ReconciliationRequest) erro
 	return nil
 }
 
-// configureEnvoyExtAuthz configures Envoy ext_authz filter to use the auth proxy
+// configureEnvoyExtAuthz configures Envoy ext_authz filter to use the auth proxy.
 func configureEnvoyExtAuthz(ctx context.Context, req *types.ReconciliationRequest) error {
 	logger := logf.FromContext(ctx)
 	gateway, ok := req.Instance.(*serviceApi.Gateway)
@@ -306,7 +306,7 @@ func configureEnvoyExtAuthz(ctx context.Context, req *types.ReconciliationReques
 
 // === PHASE 4: CERTIFICATE MANAGEMENT ===
 
-// manageCertificates handles TLS certificate configuration for gateway and auth proxy
+// manageCertificates handles TLS certificate configuration for gateway and auth proxy.
 func manageCertificates(ctx context.Context, req *types.ReconciliationRequest) error {
 	logger := logf.FromContext(ctx)
 	gateway, ok := req.Instance.(*serviceApi.Gateway)
@@ -338,7 +338,7 @@ func manageCertificates(ctx context.Context, req *types.ReconciliationRequest) e
 
 // === PHASE 6: STATUS UPDATES ===
 
-// updateGatewayStatus updates the Gateway status with current deployment state
+// updateGatewayStatus updates the Gateway status with current deployment state.
 func updateGatewayStatus(ctx context.Context, req *types.ReconciliationRequest) error {
 	logger := logf.FromContext(ctx)
 	gateway, ok := req.Instance.(*serviceApi.Gateway)
@@ -394,7 +394,7 @@ func updateGatewayStatus(ctx context.Context, req *types.ReconciliationRequest) 
 
 // === FINALIZERS ===
 
-// cleanupGatewayResources cleans up Gateway API resources when Gateway is deleted
+// cleanupGatewayResources cleans up Gateway API resources when Gateway is deleted.
 func cleanupGatewayResources(ctx context.Context, req *types.ReconciliationRequest) error {
 	logger := logf.FromContext(ctx)
 
@@ -411,7 +411,7 @@ func cleanupGatewayResources(ctx context.Context, req *types.ReconciliationReque
 	return nil
 }
 
-// cleanupAuthProxy cleans up authentication proxy resources when Gateway is deleted
+// cleanupAuthProxy cleans up authentication proxy resources when Gateway is deleted.
 func cleanupAuthProxy(ctx context.Context, req *types.ReconciliationRequest) error {
 	logger := logf.FromContext(ctx)
 
@@ -430,8 +430,7 @@ func cleanupAuthProxy(ctx context.Context, req *types.ReconciliationRequest) err
 
 // === TEMPLATE DATA FUNCTIONS ===
 
-// getTemplateData provides data for template rendering
-// Used by the template.NewAction to render resource manifests
+// Used by the template.NewAction to render resource manifests.
 func getTemplateData(ctx context.Context, req *types.ReconciliationRequest) (map[string]any, error) {
 	logger := logf.FromContext(ctx)
 	gateway, ok := req.Instance.(*serviceApi.Gateway)
@@ -537,7 +536,7 @@ func getTemplateData(ctx context.Context, req *types.ReconciliationRequest) (map
 	return templateData, nil
 }
 
-// getCertificateConfigurationForTemplate returns certificate config for templates
+// getCertificateConfigurationForTemplate returns certificate config for templates.
 func getCertificateConfigurationForTemplate(gateway *serviceApi.Gateway) map[string]interface{} {
 	certType := gateway.Spec.Certificates.Type
 	if certType == "" {
@@ -559,7 +558,7 @@ func getCertificateConfigurationForTemplate(gateway *serviceApi.Gateway) map[str
 	return config
 }
 
-// getAuthConfigForTemplate returns authentication config for templates
+// getAuthConfigForTemplate returns authentication config for templates.
 func getAuthConfigForTemplate(gateway *serviceApi.Gateway, authMode string) map[string]interface{} {
 	config := map[string]interface{}{
 		"Mode":      authMode,
@@ -580,8 +579,7 @@ func getAuthConfigForTemplate(gateway *serviceApi.Gateway, authMode string) map[
 	return config
 }
 
-// getComponentFromContext extracts component name from reconciliation context
-// Used when rendering component-specific resources like HTTPRoutes
+// Used when rendering component-specific resources like HTTPRoutes.
 func getComponentFromContext(ctx context.Context) string {
 	// TODO: Implement context-based component detection
 	// This would be used when the reconciler is processing a specific component
@@ -606,15 +604,14 @@ func updateCondition(conditions []metav1.Condition, newCondition metav1.Conditio
 	return append(conditions, newCondition)
 }
 
-// RequeueAfter returns an error that causes reconciliation to be requeued after a delay
-// Used during waiting periods (e.g., OIDC rollout, Gateway readiness)
+// Used during waiting periods (e.g., OIDC rollout, Gateway readiness).
 func RequeueAfter(duration time.Duration) error {
 	// For MVP, return a simple error. In future, this could be enhanced
 	// to work with the reconciler framework's requeue mechanisms
 	return fmt.Errorf("requeuing after %v", duration)
 }
 
-// generateRandomSecret creates a random hex-encoded secret of the specified length
+// generateRandomSecret creates a random hex-encoded secret of the specified length.
 func generateRandomSecret(length int) string {
 	bytes := make([]byte, length/2) // hex encoding doubles the length
 	if _, err := rand.Read(bytes); err != nil {

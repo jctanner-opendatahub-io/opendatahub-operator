@@ -47,13 +47,13 @@ func init() {
 	sr.Add(&ServiceHandler{})
 }
 
-// ServiceHandler implements the service registry interface for the Gateway controller
-// Manages the lifecycle and configuration of the Gateway service
+// ServiceHandler implements the service registry interface for the Gateway controller.
+// Manages the lifecycle and configuration of the Gateway service.
 type ServiceHandler struct {
 }
 
-// Init initializes the Gateway service handler
-// Called during operator startup to prepare service-specific resources
+// Init initializes the Gateway service handler.
+// Called during operator startup to prepare service-specific resources.
 func (h *ServiceHandler) Init(_ common.Platform) error {
 	// TODO: Initialize any service-specific resources
 	// Examples:
@@ -63,13 +63,13 @@ func (h *ServiceHandler) Init(_ common.Platform) error {
 	return nil
 }
 
-// GetName returns the service name for registration and logging
+// GetName returns the service name for registration and logging.
 func (h *ServiceHandler) GetName() string {
 	return ServiceName
 }
 
-// GetManagementState determines if the Gateway service should be managed
-// Based on platform configuration and DSCInitialization settings
+// GetManagementState determines if the Gateway service should be managed.
+// Based on platform configuration and DSCInitialization settings.
 func (h *ServiceHandler) GetManagementState(platform common.Platform, dsci *dsciv1.DSCInitialization) operatorv1.ManagementState {
 	// For MVP: Gateway service is managed if:
 	// 1. We're on OpenShift (has Gateway API support)
@@ -94,8 +94,8 @@ func (h *ServiceHandler) GetManagementState(platform common.Platform, dsci *dsci
 	return operatorv1.Managed
 }
 
-// NewReconciler creates and configures the Gateway controller reconciler
-// Sets up watches, actions, and reconciliation logic following the design patterns
+// NewReconciler creates and configures the Gateway controller reconciler.
+// Sets up watches, actions, and reconciliation logic following the design patterns.
 func (h *ServiceHandler) NewReconciler(ctx context.Context, mgr ctrl.Manager) error {
 	// Create the reconciler using the common reconciler framework
 	// This follows the same pattern as other service controllers in the codebase
@@ -193,7 +193,7 @@ func (h *ServiceHandler) NewReconciler(ctx context.Context, mgr ctrl.Manager) er
 // mapAuthToGateway maps Authentication CR changes to Gateway reconciliation
 //
 //nolint:unused // Part of planned architecture, will be used when watches are implemented
-func (h *ServiceHandler) mapAuthToGateway(ctx context.Context, obj client.Object) []reconcile.Request {
+func (h *ServiceHandler) mapAuthToGateway(_ context.Context, obj client.Object) []reconcile.Request {
 	// TODO: Implement mapping logic
 	// Should trigger reconciliation of the singleton Gateway resource
 	// when cluster authentication configuration changes
@@ -205,7 +205,7 @@ func (h *ServiceHandler) mapAuthToGateway(ctx context.Context, obj client.Object
 // mapKASToGateway maps KubeAPIServer CR changes to Gateway reconciliation
 //
 //nolint:unused // Part of planned architecture, will be used when watches are implemented
-func (h *ServiceHandler) mapKASToGateway(ctx context.Context, obj client.Object) []reconcile.Request {
+func (h *ServiceHandler) mapKASToGateway(_ context.Context, obj client.Object) []reconcile.Request {
 	// TODO: Implement mapping logic
 	// Should trigger reconciliation when KubeAPIServer status changes
 	// (relevant for OIDC rollout tracking)
@@ -217,7 +217,7 @@ func (h *ServiceHandler) mapKASToGateway(ctx context.Context, obj client.Object)
 // mapConfigMapToGateway maps auth-related ConfigMap changes to Gateway reconciliation
 //
 //nolint:unused // Part of planned architecture, will be used when watches are implemented
-func (h *ServiceHandler) mapConfigMapToGateway(ctx context.Context, obj client.Object) []reconcile.Request {
+func (h *ServiceHandler) mapConfigMapToGateway(_ context.Context, obj client.Object) []reconcile.Request {
 	// TODO: Implement mapping logic
 	// Should trigger reconciliation when auth-config-* or config-* ConfigMaps change
 	// (relevant for OIDC rollout detection)
