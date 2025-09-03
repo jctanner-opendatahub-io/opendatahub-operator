@@ -18,6 +18,7 @@ package gateway
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	configv1 "github.com/openshift/api/config/v1"
@@ -33,7 +34,7 @@ const (
 	ServiceName = serviceApi.GatewayServiceName
 )
 
-// AuthenticationMode represents the detected authentication mode of the cluster
+// AuthenticationMode represents the detected authentication mode of the cluster.
 type AuthenticationMode string
 
 const (
@@ -43,16 +44,16 @@ const (
 	ModeUnknown         AuthenticationMode = "Unknown"
 )
 
-// AuthModeDetector handles detection of OpenShift authentication modes
-// Based on research from OPENSHIFT_AUTH_MODE.md SPIKE findings
+// AuthModeDetector handles detection of OpenShift authentication modes.
+// Based on research from OPENSHIFT_AUTH_MODE.md SPIKE findings.
 type AuthModeDetector struct {
 	configClient configclient.Interface
 	coreClient   kubernetes.Interface
 	restConfig   *rest.Config
 }
 
-// NewAuthModeDetector creates a new authentication mode detector
-// Requires cluster configuration to access OpenShift config APIs
+// NewAuthModeDetector creates a new authentication mode detector.
+// Requires cluster configuration to access OpenShift config APIs.
 func NewAuthModeDetector(config *rest.Config) (*AuthModeDetector, error) {
 	configClient, err := configclient.NewForConfig(config)
 	if err != nil {
@@ -97,6 +98,9 @@ func (d *AuthModeDetector) determineMode(auth *configv1.Authentication) Authenti
 		// Empty string is equivalent to IntegratedOAuth (default)
 		// Uses OpenShift OAuth server as identity broker
 		return ModeIntegratedOAuth
+	case configv1.AuthenticationTypeNone:
+		// None mode - no authentication
+		return ModeNone
 	}
 
 	// Advanced mode detection: check for webhook authenticator without OAuth metadata
@@ -134,7 +138,7 @@ func (d *AuthModeDetector) IsOIDCFullyDeployed(ctx context.Context) (bool, error
 	//
 	// See OPENSHIFT_AUTH_MODE.md for complete implementation details
 
-	return false, fmt.Errorf("OIDC rollout verification not implemented - see SPIKE-1 findings")
+	return false, errors.New("OIDC rollout verification not implemented - see SPIKE-1 findings")
 }
 
 // GetProxyConfiguration returns configuration needed for kube-auth-proxy deployment
@@ -167,7 +171,7 @@ func (d *AuthModeDetector) GetProxyConfiguration(ctx context.Context) (*ProxyCon
 	case ModeOIDC:
 		// Configure for external OIDC provider
 		if len(auth.Spec.OIDCProviders) == 0 {
-			return nil, fmt.Errorf("OIDC mode configured but no providers found")
+			return nil, errors.New("OIDC mode configured but no providers found")
 		}
 		config.OIDCConfig = &OIDCProxyConfig{
 			// TODO: Extract OIDC provider configuration
@@ -178,6 +182,10 @@ func (d *AuthModeDetector) GetProxyConfiguration(ctx context.Context) (*ProxyCon
 		config.WebhookConfig = &WebhookProxyConfig{
 			// TODO: Extract webhook configuration
 		}
+
+	case ModeUnknown:
+		// Unknown mode - cannot configure proxy
+		return nil, fmt.Errorf("cannot configure proxy for unknown authentication mode")
 	}
 
 	return config, nil

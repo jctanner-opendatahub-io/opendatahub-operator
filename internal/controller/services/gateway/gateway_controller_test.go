@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package gateway
+package gateway_test
 
 import (
 	"testing"
@@ -26,6 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	serviceApi "github.com/opendatahub-io/opendatahub-operator/v2/api/services/v1alpha1"
+	"github.com/opendatahub-io/opendatahub-operator/v2/internal/controller/services/gateway"
 )
 
 func TestGatewayController(t *testing.T) {
@@ -36,14 +37,14 @@ func TestGatewayController(t *testing.T) {
 var _ = Describe("Gateway Controller", func() {
 
 	Describe("ServiceHandler", func() {
-		var handler *ServiceHandler
+		var handler *gateway.ServiceHandler
 
 		BeforeEach(func() {
-			handler = &ServiceHandler{}
+			handler = &gateway.ServiceHandler{}
 		})
 
 		It("should return correct service name", func() {
-			Expect(handler.GetName()).To(Equal(ServiceName))
+			Expect(handler.GetName()).To(Equal(gateway.ServiceName))
 		})
 
 		It("should initialize without error", func() {
@@ -62,7 +63,7 @@ var _ = Describe("Gateway Controller", func() {
 	Describe("AuthModeDetector", func() {
 
 		Describe("determineMode", func() {
-			var _ *AuthModeDetector
+			var _ *gateway.AuthModeDetector
 
 			BeforeEach(func() {
 				// TODO: Initialize detector with test configuration
@@ -162,13 +163,13 @@ var _ = Describe("Gateway Controller", func() {
 
 			It("should validate manual mode configuration", func() {
 				gateway.Spec.Auth.Mode = "manual"
-				forceMode := string(ModeOIDC)
+				forceMode := string(gateway.ModeOIDC)
 				gateway.Spec.Auth.ForceMode = &forceMode
 				gateway.Spec.Auth.OIDC = &serviceApi.OIDCConfig{
 					IssuerURL: "https://oidc.example.com",
 					ClientSecretRef: corev1.SecretKeySelector{
 						LocalObjectReference: corev1.LocalObjectReference{Name: "oidc-secret"},
-						Key:                   "client-secret",
+						Key:                  "client-secret",
 					},
 				}
 
@@ -179,7 +180,7 @@ var _ = Describe("Gateway Controller", func() {
 
 			It("should reject invalid OIDC configuration", func() {
 				gateway.Spec.Auth.Mode = "manual"
-				forceMode := string(ModeOIDC)
+				forceMode := string(gateway.ModeOIDC)
 				gateway.Spec.Auth.ForceMode = &forceMode
 				// Missing OIDC configuration
 
@@ -213,7 +214,7 @@ var _ = Describe("Gateway Controller", func() {
 			gateway.Spec.Certificates.Type = "provided"
 			gateway.Spec.Certificates.SecretRef = &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{Name: "custom-tls"},
-				Key:                   "tls.crt",
+				Key:                  "tls.crt",
 			}
 
 			// TODO: Test provided certificate configuration
@@ -269,7 +270,7 @@ func createTestGateway(name string, domain string) *serviceApi.Gateway {
 			},
 		},
 		Status: serviceApi.GatewayStatus{
-			DetectedAuthMode: string(ModeIntegratedOAuth),
+			DetectedAuthMode: string(gateway.ModeIntegratedOAuth),
 		},
 	}
 }

@@ -18,36 +18,34 @@ package gateway
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
-
 	operatorv1 "github.com/openshift/api/operator/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-
 	serviceApi "github.com/opendatahub-io/opendatahub-operator/v2/api/services/v1alpha1"
-
 )
 
 // === AUTHENTICATION MODE VALIDATION ===
 
 // validateAuthenticationConfiguration validates the Gateway authentication configuration
 // against the detected cluster authentication mode
-func validateAuthenticationConfiguration(ctx context.Context, gateway *serviceApi.Gateway, detectedMode AuthenticationMode) error {
+func validateAuthenticationConfiguration(_ context.Context, gateway *serviceApi.Gateway, detectedMode AuthenticationMode) error {
 	authSpec := gateway.Spec.Auth
 
 	// Validate mode configuration
 	switch authSpec.Mode {
-	case "auto", "":
+	case AuthModeAuto, "":
 		// Auto mode - use detected configuration
 		return validateAutoModeConfiguration(detectedMode, authSpec)
-	case "manual":
+	case AuthModeManual:
 		// Manual mode - validate explicit configuration
 		return validateManualModeConfiguration(authSpec)
 	default:
@@ -72,7 +70,7 @@ func validateAutoModeConfiguration(detectedMode AuthenticationMode, authSpec ser
 
 	case ModeNone:
 		// None mode - external authentication system required
-		return fmt.Errorf("authentication mode 'None' detected but external authentication configuration not supported in auto mode")
+		return errors.New("authentication mode 'None' detected but external authentication configuration not supported in auto mode")
 
 	default:
 		return fmt.Errorf("unknown authentication mode detected: %s", detectedMode)
@@ -153,8 +151,6 @@ func generateGatewayLabels() map[string]string {
 	}
 }
 
-
-
 // === CERTIFICATE UTILITIES ===
 
 // getCertificateConfiguration determines certificate settings based on Gateway spec
@@ -163,7 +159,7 @@ func getCertificateConfiguration(gateway *serviceApi.Gateway) (*CertificateConfi
 	certType := certSpec.Type
 
 	if certType == "" {
-		certType = "auto" // Default to automatic certificates
+		certType = CertTypeAuto // Default to automatic certificates
 	}
 
 	config := &CertificateConfig{
@@ -171,12 +167,12 @@ func getCertificateConfiguration(gateway *serviceApi.Gateway) (*CertificateConfi
 	}
 
 	switch certType {
-	case "auto":
+	case CertTypeAuto:
 		// Use OpenShift service-ca for automatic certificate generation
 		config.SecretName = buildGatewayName() + "-tls"
 		config.UseServiceCA = true
 
-	case "provided":
+	case CertTypeProvided:
 		// Use user-provided certificate secret
 		if certSpec.SecretRef == nil {
 			return nil, fmt.Errorf("certificate type 'provided' requires SecretRef to be specified")
@@ -305,7 +301,7 @@ func isAuthConfigMap(cm *corev1.ConfigMap) bool {
 // extractActiveRevisions extracts active revision numbers from KubeAPIServer status
 // Used for OIDC rollout validation as discovered in SPIKE-1
 func extractActiveRevisions(kas *operatorv1.KubeAPIServer) []int32 {
-	var revisions []int32
+	revisions := make([]int32, 0, len(kas.Status.NodeStatuses))
 	for _, nodeStatus := range kas.Status.NodeStatuses {
 		revisions = append(revisions, nodeStatus.CurrentRevision)
 	}
@@ -320,7 +316,7 @@ func validateRevisionOIDCConfig(ctx context.Context, coreClient kubernetes.Inter
 	// Check auth-config-<revision> ConfigMap exists
 	authConfigName := fmt.Sprintf("auth-config-%d", revision)
 	_, err := coreClient.CoreV1().ConfigMaps(namespace).Get(ctx, authConfigName, metav1.GetOptions{})
-	if errors.IsNotFound(err) {
+	if kerrors.IsNotFound(err) {
 		return false, nil // Rollout still in progress
 	} else if err != nil {
 		return false, fmt.Errorf("checking auth-config-%d: %w", revision, err)

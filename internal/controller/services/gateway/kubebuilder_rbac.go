@@ -13,7 +13,7 @@ package gateway
 // +kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=gateways/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=httproutes/status,verbs=get;update;patch
 
-// Authentication mode detection - OpenShift cluster configuration  
+// Authentication mode detection - OpenShift cluster configuration
 // +kubebuilder:rbac:groups=config.openshift.io,resources=authentications,verbs=get;list;watch
 // +kubebuilder:rbac:groups=operator.openshift.io,resources=kubeapiservers,verbs=get;list;watch
 
@@ -39,7 +39,7 @@ package gateway
 // User and group access for authentication
 // +kubebuilder:rbac:groups=user.openshift.io,resources=users,verbs=get;list;watch
 // +kubebuilder:rbac:groups=user.openshift.io,resources=groups,verbs=get;list;watch
-// +kubebuilder:rbac:groups="",resources=users,verbs=get;list;watch  
+// +kubebuilder:rbac:groups="",resources=users,verbs=get;list;watch
 // +kubebuilder:rbac:groups="",resources=groups,verbs=get;list;watch
 
 // Token validation for authentication proxy

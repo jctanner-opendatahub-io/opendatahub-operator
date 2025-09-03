@@ -25,12 +25,9 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-
 	serviceApi "github.com/opendatahub-io/opendatahub-operator/v2/api/services/v1alpha1"
-
 	"github.com/opendatahub-io/opendatahub-operator/v2/pkg/controller/conditions"
 	"github.com/opendatahub-io/opendatahub-operator/v2/pkg/controller/types"
 )
@@ -38,18 +35,29 @@ import (
 //go:embed resources
 var resourcesFS embed.FS
 
+// Constants for authentication and certificate configuration
+const (
+	AuthModeAuto     = "auto"
+	AuthModeManual   = "manual"
+	CertTypeAuto     = "auto"
+	CertTypeProvided = "provided"
+)
+
 // === PHASE 1: AUTHENTICATION MODE DETECTION ===
 
 // detectAuthenticationMode determines the cluster's authentication configuration
 // Uses the AuthModeDetector from SPIKE-1 findings to identify IntegratedOAuth vs OIDC vs None
 func detectAuthenticationMode(ctx context.Context, req *types.ReconciliationRequest) error {
 	logger := logf.FromContext(ctx)
-	gateway := req.Instance.(*serviceApi.Gateway)
+	gateway, ok := req.Instance.(*serviceApi.Gateway)
+	if !ok {
+		return fmt.Errorf("expected Gateway instance, got %T", req.Instance)
+	}
 
 	logger.Info("Detecting cluster authentication mode")
 
 	// Check if manual override is specified
-	if gateway.Spec.Auth.Mode == "manual" && gateway.Spec.Auth.ForceMode != nil {
+	if gateway.Spec.Auth.Mode == AuthModeManual && gateway.Spec.Auth.ForceMode != nil {
 		forcedMode := AuthenticationMode(*gateway.Spec.Auth.ForceMode)
 		gateway.Status.DetectedAuthMode = string(forcedMode)
 		logger.Info("Using manually configured authentication mode", "mode", forcedMode)
@@ -68,7 +76,10 @@ func detectAuthenticationMode(ctx context.Context, req *types.ReconciliationRequ
 // Critical for preventing authentication failures during cluster auth transitions
 func validateOIDCRollout(ctx context.Context, req *types.ReconciliationRequest) error {
 	logger := logf.FromContext(ctx)
-	gateway := req.Instance.(*serviceApi.Gateway)
+	gateway, ok := req.Instance.(*serviceApi.Gateway)
+	if !ok {
+		return fmt.Errorf("expected Gateway instance, got %T", req.Instance)
+	}
 
 	// Only validate rollout for OIDC mode
 	if gateway.Status.DetectedAuthMode != string(ModeOIDC) {
@@ -110,7 +121,10 @@ func validateOIDCRollout(ctx context.Context, req *types.ReconciliationRequest) 
 // updateAuthenticationStatus updates Gateway status with authentication configuration details
 func updateAuthenticationStatus(ctx context.Context, req *types.ReconciliationRequest) error {
 	logger := logf.FromContext(ctx)
-	gateway := req.Instance.(*serviceApi.Gateway)
+	gateway, ok := req.Instance.(*serviceApi.Gateway)
+	if !ok {
+		return fmt.Errorf("expected Gateway instance, got %T", req.Instance)
+	}
 
 	logger.V(1).Info("Updating authentication status")
 
@@ -130,7 +144,7 @@ func updateAuthenticationStatus(ctx context.Context, req *types.ReconciliationRe
 		)
 	}
 
-	logger.Info("Updated authentication status", 
+	logger.Info("Updated authentication status",
 		"mode", gateway.Status.DetectedAuthMode,
 		"conditions", len(gateway.Status.Conditions))
 
@@ -159,7 +173,10 @@ func createGatewayClass(ctx context.Context, req *types.ReconciliationRequest) e
 // createGateway creates the Gateway resource in openshift-ingress namespace
 func createGateway(ctx context.Context, req *types.ReconciliationRequest) error {
 	logger := logf.FromContext(ctx)
-	gateway := req.Instance.(*serviceApi.Gateway)
+	gateway, ok := req.Instance.(*serviceApi.Gateway)
+	if !ok {
+		return fmt.Errorf("expected Gateway instance, got %T", req.Instance)
+	}
 
 	logger.Info("Creating Gateway resource")
 
@@ -192,7 +209,7 @@ func waitForGatewayReady(ctx context.Context, req *types.ReconciliationRequest) 
 	// - Address assignment by the gateway controller
 	// - Ready condition status
 	// - Listener status for each configured listener
-	// 
+	//
 	// If not ready, requeue with backoff
 
 	// TODO: Update Gateway status with address information
@@ -211,7 +228,10 @@ func waitForGatewayReady(ctx context.Context, req *types.ReconciliationRequest) 
 // deployAuthProxy deploys kube-auth-proxy with configuration based on detected auth mode
 func deployAuthProxy(ctx context.Context, req *types.ReconciliationRequest) error {
 	logger := logf.FromContext(ctx)
-	gateway := req.Instance.(*serviceApi.Gateway)
+	gateway, ok := req.Instance.(*serviceApi.Gateway)
+	if !ok {
+		return fmt.Errorf("expected Gateway instance, got %T", req.Instance)
+	}
 	authMode := gateway.Status.DetectedAuthMode
 
 	logger.Info("Deploying authentication proxy", "authMode", authMode)
@@ -258,7 +278,10 @@ func deployAuthProxy(ctx context.Context, req *types.ReconciliationRequest) erro
 // configureEnvoyExtAuthz configures Envoy ext_authz filter to use the auth proxy
 func configureEnvoyExtAuthz(ctx context.Context, req *types.ReconciliationRequest) error {
 	logger := logf.FromContext(ctx)
-	gateway := req.Instance.(*serviceApi.Gateway)
+	gateway, ok := req.Instance.(*serviceApi.Gateway)
+	if !ok {
+		return fmt.Errorf("expected Gateway instance, got %T", req.Instance)
+	}
 
 	logger.Info("Configuring Envoy ext_authz integration")
 
@@ -286,7 +309,10 @@ func configureEnvoyExtAuthz(ctx context.Context, req *types.ReconciliationReques
 // manageCertificates handles TLS certificate configuration for gateway and auth proxy
 func manageCertificates(ctx context.Context, req *types.ReconciliationRequest) error {
 	logger := logf.FromContext(ctx)
-	gateway := req.Instance.(*serviceApi.Gateway)
+	gateway, ok := req.Instance.(*serviceApi.Gateway)
+	if !ok {
+		return fmt.Errorf("expected Gateway instance, got %T", req.Instance)
+	}
 
 	logger.Info("Managing TLS certificates")
 
@@ -302,7 +328,7 @@ func manageCertificates(ctx context.Context, req *types.ReconciliationRequest) e
 
 	certType := gateway.Spec.Certificates.Type
 	if certType == "" {
-		certType = "auto" // Default to automatic certificates
+		certType = CertTypeAuto // Default to automatic certificates
 	}
 
 	logger.Info("Certificate management not implemented", "type", certType)
@@ -315,7 +341,10 @@ func manageCertificates(ctx context.Context, req *types.ReconciliationRequest) e
 // updateGatewayStatus updates the Gateway status with current deployment state
 func updateGatewayStatus(ctx context.Context, req *types.ReconciliationRequest) error {
 	logger := logf.FromContext(ctx)
-	gateway := req.Instance.(*serviceApi.Gateway)
+	gateway, ok := req.Instance.(*serviceApi.Gateway)
+	if !ok {
+		return fmt.Errorf("expected Gateway instance, got %T", req.Instance)
+	}
 
 	logger.V(1).Info("Updating Gateway status")
 
@@ -329,8 +358,8 @@ func updateGatewayStatus(ctx context.Context, req *types.ReconciliationRequest) 
 
 	// Update Gateway API resource status
 	gateway.Status.GatewayResourceStatus.GatewayClassReady = true // Assume rendered successfully
-	gateway.Status.GatewayResourceStatus.GatewayReady = true     // Will be updated by waitForGatewayReady
-	
+	gateway.Status.GatewayResourceStatus.GatewayReady = true      // Will be updated by waitForGatewayReady
+
 	// Update Auth Proxy status
 	gateway.Status.AuthProxyStatus.Ready = true // Assume deployed successfully
 	gateway.Status.AuthProxyStatus.ConfiguredMode = gateway.Status.DetectedAuthMode
@@ -405,7 +434,10 @@ func cleanupAuthProxy(ctx context.Context, req *types.ReconciliationRequest) err
 // Used by the template.NewAction to render resource manifests
 func getTemplateData(ctx context.Context, req *types.ReconciliationRequest) (map[string]any, error) {
 	logger := logf.FromContext(ctx)
-	gateway := req.Instance.(*serviceApi.Gateway)
+	gateway, ok := req.Instance.(*serviceApi.Gateway)
+	if !ok {
+		return nil, fmt.Errorf("expected Gateway instance, got %T", req.Instance)
+	}
 
 	logger.V(1).Info("Generating template data")
 
@@ -426,7 +458,7 @@ func getTemplateData(ctx context.Context, req *types.ReconciliationRequest) (map
 		domain = "odh.cluster.local" // Default domain
 	}
 
-	// Get detected authentication mode with fallback  
+	// Get detected authentication mode with fallback
 	authMode := gateway.Status.DetectedAuthMode
 	if authMode == "" {
 		authMode = string(ModeIntegratedOAuth) // Default to OpenShift OAuth
@@ -441,28 +473,28 @@ func getTemplateData(ctx context.Context, req *types.ReconciliationRequest) (map
 
 	// Generate OAuth client secret for token exchange
 	oauthClientSecret := generateRandomSecret(32) // 32-character random secret
-	
+
 	// Create comprehensive template data structure
 	templateData := map[string]interface{}{
 		// Core Gateway configuration
-		"Gateway":              gateway,
-		"GatewayClassName":     gatewayClassName,
-		"GatewayName":          gatewayName,
-		"AuthProxyName":        authProxyName,
-		"Namespace":            namespace,
-		"Domain":               domain,
-		"AuthMode":             authMode,
-		"ClusterDomain":        clusterDomain,
-		"OAuthClientSecret":    oauthClientSecret,
+		"Gateway":           gateway,
+		"GatewayClassName":  gatewayClassName,
+		"GatewayName":       gatewayName,
+		"AuthProxyName":     authProxyName,
+		"Namespace":         namespace,
+		"Domain":            domain,
+		"AuthMode":          authMode,
+		"ClusterDomain":     clusterDomain,
+		"OAuthClientSecret": oauthClientSecret,
 
 		// Resource labeling and metadata
-		"GatewayLabels":        gatewayLabels,
+		"GatewayLabels": gatewayLabels,
 
 		// Certificate configuration
-		"CertificateConfig":    getCertificateConfigurationForTemplate(gateway),
+		"CertificateConfig": getCertificateConfigurationForTemplate(gateway),
 
 		// Authentication configuration details
-		"AuthConfig":           getAuthConfigForTemplate(gateway, authMode),
+		"AuthConfig": getAuthConfigForTemplate(gateway, authMode),
 
 		// Component routing (used for HTTPRoute generation)
 		"ComponentRouting": map[string]interface{}{
@@ -490,13 +522,13 @@ func getTemplateData(ctx context.Context, req *types.ReconciliationRequest) (map
 		templateData["ServiceName"] = fmt.Sprintf("%s-service", componentName)
 		templateData["ServicePort"] = 8080 // Default port
 		templateData["ServiceNamespace"] = namespace
-		
+
 		// Component-specific paths
-		templateData["HealthPath"] = "/health" 
+		templateData["HealthPath"] = "/health"
 		templateData["APIPath"] = "/api"
 	}
 
-	logger.V(1).Info("Generated template data", 
+	logger.V(1).Info("Generated template data",
 		"gatewayName", gatewayName,
 		"authMode", authMode,
 		"namespace", namespace,
@@ -509,17 +541,17 @@ func getTemplateData(ctx context.Context, req *types.ReconciliationRequest) (map
 func getCertificateConfigurationForTemplate(gateway *serviceApi.Gateway) map[string]interface{} {
 	certType := gateway.Spec.Certificates.Type
 	if certType == "" {
-		certType = "auto" // Default to automatic certificates
+		certType = CertTypeAuto // Default to automatic certificates
 	}
 
 	config := map[string]interface{}{
-		"Type": certType,
-		"Auto": certType == "auto",
-		"Provided": certType == "provided",
+		"Type":        certType,
+		"Auto":        certType == CertTypeAuto,
+		"Provided":    certType == CertTypeProvided,
 		"CertManager": certType == "cert-manager",
 	}
 
-	if certType == "provided" && gateway.Spec.Certificates.SecretRef != nil {
+	if certType == CertTypeProvided && gateway.Spec.Certificates.SecretRef != nil {
 		config["SecretName"] = gateway.Spec.Certificates.SecretRef.Name
 		config["SecretKey"] = gateway.Spec.Certificates.SecretRef.Key
 	}
@@ -530,17 +562,17 @@ func getCertificateConfigurationForTemplate(gateway *serviceApi.Gateway) map[str
 // getAuthConfigForTemplate returns authentication config for templates
 func getAuthConfigForTemplate(gateway *serviceApi.Gateway, authMode string) map[string]interface{} {
 	config := map[string]interface{}{
-		"Mode": authMode,
-		"IsOAuth": authMode == string(ModeIntegratedOAuth),
-		"IsOIDC": authMode == string(ModeOIDC), 
+		"Mode":      authMode,
+		"IsOAuth":   authMode == string(ModeIntegratedOAuth),
+		"IsOIDC":    authMode == string(ModeOIDC),
 		"IsWebhook": authMode == string(ModeNone),
 	}
 
 	// Add OIDC-specific configuration if available
 	if authMode == string(ModeOIDC) && gateway.Spec.Auth.OIDC != nil {
 		config["OIDC"] = map[string]interface{}{
-			"IssuerURL": gateway.Spec.Auth.OIDC.IssuerURL,
-			"Audiences": gateway.Spec.Auth.OIDC.Audiences,
+			"IssuerURL":       gateway.Spec.Auth.OIDC.IssuerURL,
+			"Audiences":       gateway.Spec.Auth.OIDC.Audiences,
 			"ClientSecretRef": gateway.Spec.Auth.OIDC.ClientSecretRef,
 		}
 	}

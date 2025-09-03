@@ -115,7 +115,7 @@ func init() { //nolint:gochecknoinits
 	utilruntime.Must(componentApi.AddToScheme(scheme))
 	utilruntime.Must(serviceApi.AddToScheme(scheme))
 	utilruntime.Must(infrastructurev1alpha1.AddToScheme(scheme))
-	utilruntime.Must(gwapiv1.AddToScheme(scheme))
+	utilruntime.Must(gwapiv1.Install(scheme))
 	// +kubebuilder:scaffold:scheme
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(dsciv1.AddToScheme(scheme))
