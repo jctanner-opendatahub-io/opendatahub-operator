@@ -193,7 +193,7 @@ func (h *ServiceHandler) NewReconciler(ctx context.Context, mgr ctrl.Manager) er
 // mapAuthToGateway maps Authentication CR changes to Gateway reconciliation
 //
 //nolint:unused // Part of planned architecture, will be used when watches are implemented
-func (h *ServiceHandler) mapAuthToGateway(_ context.Context, obj client.Object) []reconcile.Request {
+func (h *ServiceHandler) mapAuthToGateway(_ context.Context, _ client.Object) []reconcile.Request {
 	// TODO: Implement mapping logic
 	// Should trigger reconciliation of the singleton Gateway resource
 	// when cluster authentication configuration changes
@@ -205,7 +205,7 @@ func (h *ServiceHandler) mapAuthToGateway(_ context.Context, obj client.Object) 
 // mapKASToGateway maps KubeAPIServer CR changes to Gateway reconciliation
 //
 //nolint:unused // Part of planned architecture, will be used when watches are implemented
-func (h *ServiceHandler) mapKASToGateway(_ context.Context, obj client.Object) []reconcile.Request {
+func (h *ServiceHandler) mapKASToGateway(_ context.Context, _ client.Object) []reconcile.Request {
 	// TODO: Implement mapping logic
 	// Should trigger reconciliation when KubeAPIServer status changes
 	// (relevant for OIDC rollout tracking)
@@ -217,7 +217,7 @@ func (h *ServiceHandler) mapKASToGateway(_ context.Context, obj client.Object) [
 // mapConfigMapToGateway maps auth-related ConfigMap changes to Gateway reconciliation
 //
 //nolint:unused // Part of planned architecture, will be used when watches are implemented
-func (h *ServiceHandler) mapConfigMapToGateway(_ context.Context, obj client.Object) []reconcile.Request {
+func (h *ServiceHandler) mapConfigMapToGateway(_ context.Context, _ client.Object) []reconcile.Request {
 	// TODO: Implement mapping logic
 	// Should trigger reconciliation when auth-config-* or config-* ConfigMaps change
 	// (relevant for OIDC rollout detection)

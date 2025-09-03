@@ -136,6 +136,8 @@ func buildGatewayName() string {
 }
 
 // buildGatewayNamespace returns the namespace where Gateway resources should be created.
+//
+//nolint:unused // Part of planned Gateway API resource management implementation
 func buildGatewayNamespace() string {
 	return "openshift-ingress" // As specified in design document
 }
@@ -176,7 +178,7 @@ func getCertificateConfiguration(gateway *serviceApi.Gateway) (*CertificateConfi
 	case CertTypeProvided:
 		// Use user-provided certificate secret
 		if certSpec.SecretRef == nil {
-			return nil, fmt.Errorf("certificate type 'provided' requires SecretRef to be specified")
+			return nil, errors.New("certificate type 'provided' requires SecretRef to be specified")
 		}
 		config.SecretName = certSpec.SecretRef.Name
 		config.SecretKey = certSpec.SecretRef.Key
@@ -361,6 +363,8 @@ func validateRevisionOIDCConfig(ctx context.Context, coreClient kubernetes.Inter
 // === DOMAIN AND ROUTING UTILITIES ===
 
 // buildComponentRoute generates the route path for a specific ODH component.
+//
+//nolint:unused // Part of planned component routing implementation
 func buildComponentRoute(componentName string) string {
 	return fmt.Sprintf("/%s", componentName)
 }
@@ -379,7 +383,7 @@ func buildGatewayHostname(domain string) string {
 // validateDomainConfiguration validates the domain configuration in Gateway spec.
 func validateDomainConfiguration(domain string) error {
 	if domain == "" {
-		return fmt.Errorf("domain configuration is required")
+		return errors.New("domain configuration is required")
 	}
 
 	// TODO: Add domain format validation
