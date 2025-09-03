@@ -191,6 +191,8 @@ func (h *ServiceHandler) NewReconciler(ctx context.Context, mgr ctrl.Manager) er
 // Functions to map watched resources to Gateway reconciliation requests
 
 // mapAuthToGateway maps Authentication CR changes to Gateway reconciliation
+//
+//nolint:unused // Part of planned architecture, will be used when watches are implemented
 func (h *ServiceHandler) mapAuthToGateway(ctx context.Context, obj client.Object) []reconcile.Request {
 	// TODO: Implement mapping logic
 	// Should trigger reconciliation of the singleton Gateway resource
@@ -201,6 +203,8 @@ func (h *ServiceHandler) mapAuthToGateway(ctx context.Context, obj client.Object
 }
 
 // mapKASToGateway maps KubeAPIServer CR changes to Gateway reconciliation
+//
+//nolint:unused // Part of planned architecture, will be used when watches are implemented
 func (h *ServiceHandler) mapKASToGateway(ctx context.Context, obj client.Object) []reconcile.Request {
 	// TODO: Implement mapping logic
 	// Should trigger reconciliation when KubeAPIServer status changes
@@ -211,6 +215,8 @@ func (h *ServiceHandler) mapKASToGateway(ctx context.Context, obj client.Object)
 }
 
 // mapConfigMapToGateway maps auth-related ConfigMap changes to Gateway reconciliation
+//
+//nolint:unused // Part of planned architecture, will be used when watches are implemented
 func (h *ServiceHandler) mapConfigMapToGateway(ctx context.Context, obj client.Object) []reconcile.Request {
 	// TODO: Implement mapping logic
 	// Should trigger reconciliation when auth-config-* or config-* ConfigMaps change
@@ -221,6 +227,8 @@ func (h *ServiceHandler) mapConfigMapToGateway(ctx context.Context, obj client.O
 }
 
 // isAuthConfigMap filters ConfigMaps to only auth-related ones in openshift-kube-apiserver
+//
+//nolint:unused // Part of planned architecture, will be used when watches are implemented
 func (h *ServiceHandler) isAuthConfigMap(obj interface{}) bool {
 	// TODO: Implement filtering logic from SPIKE-1 findings
 	// Should return true for:

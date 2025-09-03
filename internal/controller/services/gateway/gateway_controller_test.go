@@ -14,16 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+//nolint:testpackage // Need access to unexported functions for testing
 package gateway
 
 import (
 	"testing"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	configv1 "github.com/openshift/api/config/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	serviceApi "github.com/opendatahub-io/opendatahub-operator/v2/api/services/v1alpha1"
 )
@@ -257,6 +259,8 @@ var _ = Describe("Gateway Controller", func() {
 // === HELPER FUNCTIONS FOR TESTING ===
 
 // createTestGateway creates a Gateway resource for testing
+//
+//nolint:unused // Test helper function for future test implementation
 func createTestGateway(name string, domain string) *serviceApi.Gateway {
 	return &serviceApi.Gateway{
 		ObjectMeta: metav1.ObjectMeta{
@@ -275,6 +279,8 @@ func createTestGateway(name string, domain string) *serviceApi.Gateway {
 }
 
 // createTestAuthentication creates an Authentication resource for testing
+//
+//nolint:unused // Test helper function for future test implementation
 func createTestAuthentication(authType configv1.AuthenticationType) *configv1.Authentication {
 	return &configv1.Authentication{
 		ObjectMeta: metav1.ObjectMeta{

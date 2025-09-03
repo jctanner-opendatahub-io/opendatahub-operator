@@ -72,8 +72,8 @@ func NewAuthModeDetector(config *rest.Config) (*AuthModeDetector, error) {
 	}, nil
 }
 
-// GetAuthenticationMode determines the cluster's current authentication mode
-// Returns the detected mode and the Authentication CR for further analysis
+// GetAuthenticationMode determines the cluster's current authentication mode.
+// Returns the detected mode and the Authentication CR for further analysis.
 func (d *AuthModeDetector) GetAuthenticationMode(ctx context.Context) (AuthenticationMode, *configv1.Authentication, error) {
 	// Get the cluster Authentication CR (always named "cluster")
 	auth, err := d.configClient.ConfigV1().Authentications().Get(ctx, "cluster", metav1.GetOptions{})
@@ -86,8 +86,8 @@ func (d *AuthModeDetector) GetAuthenticationMode(ctx context.Context) (Authentic
 	return mode, auth, nil
 }
 
-// determineMode implements the authentication mode detection logic from SPIKE-1
-// Uses the same logic as cluster-authentication-operator for consistency
+// determineMode implements the authentication mode detection logic from SPIKE-1.
+// Uses the same logic as cluster-authentication-operator for consistency.
 func (d *AuthModeDetector) determineMode(auth *configv1.Authentication) AuthenticationMode {
 	// Check explicit type field first (primary detection method)
 	switch auth.Spec.Type {
@@ -114,9 +114,9 @@ func (d *AuthModeDetector) determineMode(auth *configv1.Authentication) Authenti
 	return ModeIntegratedOAuth
 }
 
-// IsOIDCFullyDeployed verifies that OIDC configuration has rolled out to all control plane nodes
-// Critical for preventing authentication failures during transitions
-// Implements the rollout detection logic from SPIKE-1 findings
+// IsOIDCFullyDeployed verifies that OIDC configuration has rolled out to all control plane nodes.
+// Critical for preventing authentication failures during transitions.
+// Implements the rollout detection logic from SPIKE-1 findings.
 func (d *AuthModeDetector) IsOIDCFullyDeployed(ctx context.Context) (bool, error) {
 	mode, _, err := d.GetAuthenticationMode(ctx)
 	if err != nil {
@@ -185,7 +185,7 @@ func (d *AuthModeDetector) GetProxyConfiguration(ctx context.Context) (*ProxyCon
 
 	case ModeUnknown:
 		// Unknown mode - cannot configure proxy
-		return nil, fmt.Errorf("cannot configure proxy for unknown authentication mode")
+		return nil, errors.New("cannot configure proxy for unknown authentication mode")
 	}
 
 	return config, nil

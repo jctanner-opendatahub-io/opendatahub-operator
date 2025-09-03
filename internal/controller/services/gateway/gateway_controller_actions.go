@@ -592,6 +592,8 @@ func getComponentFromContext(ctx context.Context) string {
 // === HELPER FUNCTIONS ===
 
 // updateCondition updates or adds a condition to the conditions slice
+//
+//nolint:unused // Helper function for future condition management implementation
 func updateCondition(conditions []metav1.Condition, newCondition metav1.Condition) []metav1.Condition {
 	for i, condition := range conditions {
 		if condition.Type == newCondition.Type {

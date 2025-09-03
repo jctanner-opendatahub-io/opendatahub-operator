@@ -25,7 +25,7 @@ import (
 
 	operatorv1 "github.com/openshift/api/operator/v1"
 	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -80,14 +80,14 @@ func validateAutoModeConfiguration(detectedMode AuthenticationMode, authSpec ser
 // validateManualModeConfiguration validates configuration when using manual override
 func validateManualModeConfiguration(authSpec serviceApi.GatewayAuthSpec) error {
 	if authSpec.ForceMode == nil {
-		return fmt.Errorf("manual authentication mode requires ForceMode to be specified")
+		return errors.New("manual authentication mode requires ForceMode to be specified")
 	}
 
 	switch AuthenticationMode(*authSpec.ForceMode) {
 	case ModeOIDC:
 		// Manual OIDC mode - OIDC configuration required
 		if authSpec.OIDC == nil {
-			return fmt.Errorf("OIDC configuration required when ForceMode is 'OIDC'")
+			return errors.New("OIDC configuration required when ForceMode is 'OIDC'")
 		}
 		return validateOIDCConfiguration(authSpec.OIDC)
 
@@ -154,6 +154,8 @@ func generateGatewayLabels() map[string]string {
 // === CERTIFICATE UTILITIES ===
 
 // getCertificateConfiguration determines certificate settings based on Gateway spec
+//
+//nolint:unused // Part of planned certificate management implementation
 func getCertificateConfiguration(gateway *serviceApi.Gateway) (*CertificateConfig, error) {
 	certSpec := gateway.Spec.Certificates
 	certType := certSpec.Type
@@ -205,6 +207,8 @@ type CertificateConfig struct {
 // === ROLLOUT TRACKING UTILITIES ===
 
 // calculateRolloutTimeout determines the timeout for OIDC rollout based on Gateway spec
+//
+//nolint:unused // Part of planned OIDC rollout implementation
 func calculateRolloutTimeout(gateway *serviceApi.Gateway) time.Duration {
 	if gateway.Spec.RolloutConfig.RolloutTimeout != nil {
 		return gateway.Spec.RolloutConfig.RolloutTimeout.Duration
@@ -213,6 +217,8 @@ func calculateRolloutTimeout(gateway *serviceApi.Gateway) time.Duration {
 }
 
 // calculateRolloutCheckInterval determines the check interval for OIDC rollout
+//
+//nolint:unused // Part of planned OIDC rollout implementation
 func calculateRolloutCheckInterval(gateway *serviceApi.Gateway) time.Duration {
 	if gateway.Spec.RolloutConfig.RolloutCheckInterval != nil {
 		return gateway.Spec.RolloutConfig.RolloutCheckInterval.Duration
@@ -221,6 +227,8 @@ func calculateRolloutCheckInterval(gateway *serviceApi.Gateway) time.Duration {
 }
 
 // trackOIDCRolloutProgress updates the Gateway status with rollout progress information
+//
+//nolint:unused // Part of planned OIDC rollout implementation
 func trackOIDCRolloutProgress(gateway *serviceApi.Gateway, phase string, message string, activeRevisions []int32) {
 	if gateway.Status.OIDCRolloutStatus == nil {
 		gateway.Status.OIDCRolloutStatus = &serviceApi.OIDCRolloutStatus{
@@ -237,6 +245,8 @@ func trackOIDCRolloutProgress(gateway *serviceApi.Gateway, phase string, message
 // === STATUS CONDITION UTILITIES ===
 
 // updateReadyCondition updates the Gateway Ready condition based on component states
+//
+//nolint:unused // Part of planned status management implementation
 func updateReadyCondition(gateway *serviceApi.Gateway) {
 	// TODO: Implement condition logic based on:
 	// - AuthModeDetected condition
@@ -262,6 +272,8 @@ func updateReadyCondition(gateway *serviceApi.Gateway) {
 // === RESOURCE EXISTENCE CHECKS ===
 
 // checkGatewayAPIAvailability verifies that Gateway API CRDs are installed
+//
+//nolint:unused // Part of planned resource validation implementation
 func checkGatewayAPIAvailability(ctx context.Context, c client.Client) error {
 	// Check for Gateway API CRDs
 	// TODO: Check if required Gateway API CRDs exist
@@ -274,6 +286,8 @@ func checkGatewayAPIAvailability(ctx context.Context, c client.Client) error {
 }
 
 // checkServiceMeshAvailability verifies that Service Mesh is available for Envoy integration
+//
+//nolint:unused // Part of planned Service Mesh integration implementation
 func checkServiceMeshAvailability(ctx context.Context, c client.Client) error {
 	// TODO: Check for Service Mesh operator and control plane
 	// This may be optional depending on implementation approach
@@ -288,6 +302,8 @@ func checkServiceMeshAvailability(ctx context.Context, c client.Client) error {
 
 // isAuthConfigMap determines if a ConfigMap is relevant for OIDC rollout tracking
 // Implements the filtering logic from SPIKE-1 findings
+//
+//nolint:unused // Part of planned OIDC rollout implementation
 func isAuthConfigMap(cm *corev1.ConfigMap) bool {
 	// Must be in the openshift-kube-apiserver namespace
 	if cm.Namespace != "openshift-kube-apiserver" {
@@ -300,6 +316,8 @@ func isAuthConfigMap(cm *corev1.ConfigMap) bool {
 
 // extractActiveRevisions extracts active revision numbers from KubeAPIServer status
 // Used for OIDC rollout validation as discovered in SPIKE-1
+//
+//nolint:unused // Part of planned OIDC rollout implementation
 func extractActiveRevisions(kas *operatorv1.KubeAPIServer) []int32 {
 	revisions := make([]int32, 0, len(kas.Status.NodeStatuses))
 	for _, nodeStatus := range kas.Status.NodeStatuses {
@@ -310,13 +328,15 @@ func extractActiveRevisions(kas *operatorv1.KubeAPIServer) []int32 {
 
 // validateRevisionOIDCConfig checks if a specific revision has proper OIDC configuration
 // Implements the validation logic from SPIKE-1 findings
+//
+//nolint:unused // Part of planned OIDC rollout implementation
 func validateRevisionOIDCConfig(ctx context.Context, coreClient kubernetes.Interface, revision int32) (bool, error) {
 	namespace := "openshift-kube-apiserver"
 
 	// Check auth-config-<revision> ConfigMap exists
 	authConfigName := fmt.Sprintf("auth-config-%d", revision)
 	_, err := coreClient.CoreV1().ConfigMaps(namespace).Get(ctx, authConfigName, metav1.GetOptions{})
-	if kerrors.IsNotFound(err) {
+	if k8serr.IsNotFound(err) {
 		return false, nil // Rollout still in progress
 	} else if err != nil {
 		return false, fmt.Errorf("checking auth-config-%d: %w", revision, err)
@@ -347,6 +367,8 @@ func buildComponentRoute(componentName string) string {
 }
 
 // buildGatewayHostname constructs the full hostname for the gateway
+//
+//nolint:unused // Part of planned domain configuration implementation
 func buildGatewayHostname(domain string) string {
 	if domain == "" {
 		// TODO: Generate default domain based on cluster configuration
@@ -383,6 +405,8 @@ type ComponentMigrationPlan struct {
 
 // buildComponentMigrationPlan creates a migration plan for a specific component
 // This will be used in future iterations to migrate components from Routes to HTTPRoutes
+//
+//nolint:unused // Part of planned component migration implementation
 func buildComponentMigrationPlan(componentName string) *ComponentMigrationPlan {
 	// TODO: Implement component analysis logic
 	// This should examine existing component deployments and extract:
