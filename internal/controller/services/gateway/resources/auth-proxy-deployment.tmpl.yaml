@@ -56,6 +56,7 @@ spec:
         - --http-address=0.0.0.0:8080
         - --email-domain=*
         - --upstream=static://200
+        - --scope=user:full
         - --skip-provider-button
         - --ssl-insecure-skip-verify=true
         - --pass-access-token=true
