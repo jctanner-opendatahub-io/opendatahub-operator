@@ -112,6 +112,7 @@ func (s *componentHandler) NewComponentReconciler(ctx context.Context, mgr ctrl.
 			kustomize.WithLabel(labels.K8SCommon.PartOf, componentName),
 		)).
 		WithAction(customizeResources).
+		WithAction(patchHTTPRouteNamespace).
 		WithAction(deploy.NewAction()).
 		WithAction(deployments.NewAction()).
 		WithAction(reconcileHardwareProfiles).

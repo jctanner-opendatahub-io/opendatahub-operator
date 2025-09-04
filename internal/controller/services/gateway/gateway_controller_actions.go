@@ -275,6 +275,23 @@ func deployAuthProxy(ctx context.Context, req *types.ReconciliationRequest) erro
 	return nil
 }
 
+// createAuthProxyHTTPRoute creates an HTTPRoute for the authentication proxy service.
+func createAuthProxyHTTPRoute(ctx context.Context, req *types.ReconciliationRequest) error {
+	logger := logf.FromContext(ctx)
+
+	logger.Info("Creating HTTPRoute for authentication proxy")
+
+	// Add component HTTPRoute template to render list
+	req.Templates = append(req.Templates, types.TemplateInfo{
+		FS:   resourcesFS,
+		Path: "resources/auth-proxy-httproute.tmpl.yaml",
+	})
+
+	logger.V(1).Info("Added auth proxy HTTPRoute template for rendering")
+
+	return nil
+}
+
 // configureEnvoyExtAuthz configures Envoy ext_authz filter to use the auth proxy.
 func configureEnvoyExtAuthz(ctx context.Context, req *types.ReconciliationRequest) error {
 	logger := logf.FromContext(ctx)
@@ -500,21 +517,7 @@ func getTemplateData(ctx context.Context, req *types.ReconciliationRequest) (map
 			"BasePath":        "/",
 			"ComponentPrefix": true, // Use /component-name paths
 		},
-
-		// Template utilities
-		"Utils": map[string]interface{}{
-			"Join": func(sep string, items []string) string {
-				return fmt.Sprintf("%s", items) // TODO: Implement proper join
-			},
-			"Default": func(value, defaultValue string) string {
-				if value != "" {
-					return value
-				}
-				return defaultValue
-			},
-		},
 	}
-
 	// Add component-specific data if this is for a component HTTPRoute
 	if componentName := getComponentFromContext(ctx); componentName != "" {
 		templateData["ComponentName"] = componentName

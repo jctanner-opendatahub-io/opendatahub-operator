@@ -142,9 +142,10 @@ func (h *ServiceHandler) NewReconciler(ctx context.Context, mgr ctrl.Manager) er
 		WithAction(waitForGatewayReady). // Wait for Gateway to be assigned an address
 
 		// Phase 3: Authentication Proxy Infrastructure
-		WithAction(deployAuthProxy).        // Add auth proxy templates to list
-		WithAction(configureEnvoyExtAuthz). // Add EnvoyFilter template to list
-		WithAction(template.NewAction(      // Template rendering for ALL resources (including auth proxy)
+		WithAction(deployAuthProxy).          // Add auth proxy templates to list
+		WithAction(createAuthProxyHTTPRoute). // Create HTTPRoute for auth proxy
+		WithAction(configureEnvoyExtAuthz).   // Add EnvoyFilter template to list
+		WithAction(template.NewAction(        // Template rendering for ALL resources (including auth proxy)
 			template.WithDataFn(getTemplateData),
 		)).
 
@@ -152,7 +153,7 @@ func (h *ServiceHandler) NewReconciler(ctx context.Context, mgr ctrl.Manager) er
 		WithAction(manageCertificates). // Handle TLS certificates for gateway and proxy
 
 		// Phase 5: Component Integration (Future)
-		// WithAction(createComponentHTTPRoutes).    // Create HTTPRoutes for ODH components
+		// WithAction(createComponentHTTPRoutes). // Create HTTPRoutes for ODH components
 		// WithAction(migrateFromRoutes).           // Migrate components from Routes to HTTPRoutes
 
 		// Phase 6: Deployment and Status
