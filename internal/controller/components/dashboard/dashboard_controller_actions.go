@@ -130,33 +130,6 @@ func configureDependencies(_ context.Context, rr *odhtypes.ReconciliationRequest
 	return nil
 }
 
-// patchHTTPRouteNamespace patches the HTTPRoute to point to the correct gateway namespace.
-func patchHTTPRouteNamespace(ctx context.Context, req *odhtypes.ReconciliationRequest) error {
-	log := log.FromContext(ctx)
-
-	for i := range req.Resources {
-		res := &req.Resources[i] // Use a pointer to modify the original struct
-		if res.GetKind() == "HTTPRoute" {
-			log.Info("Patching HTTPRoute namespace", "name", res.GetName())
-
-			parentRefs, found, err := unstructured.NestedSlice(res.Object, "spec", "parentRefs")
-			if err != nil || !found {
-				return fmt.Errorf("failed to find parentRefs in HTTPRoute %s: %w", res.GetName(), err)
-			}
-			for j := range parentRefs {
-				if parentRef, ok := parentRefs[j].(map[string]interface{}); ok {
-					parentRef["namespace"] = "openshift-ingress"
-				}
-			}
-			if err := unstructured.SetNestedSlice(res.Object, parentRefs, "spec", "parentRefs"); err != nil {
-				return fmt.Errorf("failed to set parentRefs in HTTPRoute %s: %w", res.GetName(), err)
-			}
-		}
-	}
-
-	return nil
-}
-
 // updateStatus will update the status of the component.
 // It is the last action in the reconciliation loop.
 func updateStatus(ctx context.Context, rr *odhtypes.ReconciliationRequest) error {
