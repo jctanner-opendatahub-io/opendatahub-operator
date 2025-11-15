@@ -12,18 +12,18 @@ DST_MANIFESTS_DIR="./opt/manifests"
 # 2. "tag" - immutable reference (e.g., v1.0.0)
 # 3. "branch@commit-sha" - tracks branch but pinned to specific commit (e.g., main@a1b2c3d4)
 declare -A COMPONENT_MANIFESTS=(
-    ["dashboard"]="opendatahub-io:odh-dashboard:main@17e5493d67c53616b5d279385deeaa8d872d5a32:manifests"
+    ["dashboard"]="opendatahub-io:odh-dashboard:main@7486e0eaa628c30098976dd470e9e4a85c760b71:manifests"
     ["workbenches/kf-notebook-controller"]="opendatahub-io:kubeflow:main@40da0d22ed6356961aef3bd640c1be83e10734ab:components/notebook-controller/config"
     ["workbenches/odh-notebook-controller"]="opendatahub-io:kubeflow:main@40da0d22ed6356961aef3bd640c1be83e10734ab:components/odh-notebook-controller/config"
-    ["workbenches/notebooks"]="opendatahub-io:notebooks:main@fcee49385550d37751cc79507ed1c6f699ce6a79:manifests"
-    ["kserve"]="opendatahub-io:kserve:release-v0.15@95b737f413719210d08fba9ded508ba1d83af6c9:config"
-    ["ray"]="opendatahub-io:kuberay:dev@48d4f5382adb2ed5ad23980b69dcf7e1b04cbe77:ray-operator/config"
-    ["trustyai"]="opendatahub-io:trustyai-service-operator:incubation@02fc7ca7f3a7ff95ccac03d9a04b67acf5a3a050:config"
-    ["modelregistry"]="opendatahub-io:model-registry-operator:main@bea180c640e7819257ab7af3007807cda4934a51:config"
+    ["workbenches/notebooks"]="opendatahub-io:notebooks:main@6ee8518f88db217dd7fa2d766bdb3e4fe9df891c:manifests"
+    ["kserve"]="opendatahub-io:kserve:release-v0.15@6a4cfed756c2c671d724aa03c37c95911947a997:config"
+    ["ray"]="opendatahub-io:kuberay:dev@be7bbfc611040115299cd58631140b6d9f0712c1:ray-operator/config"
+    ["trustyai"]="opendatahub-io:trustyai-service-operator:incubation@c0d153c22f3a2916fe52aa5819bb754937bae34a:config"
+    ["modelregistry"]="opendatahub-io:model-registry-operator:main@4a622e86a3b50c411aff689fea20364745c69c5a:config"
     ["trainingoperator"]="opendatahub-io:training-operator:dev@fc212b8db7fde82f12e801e6778961097899e88d:manifests"
     ["datasciencepipelines"]="opendatahub-io:data-science-pipelines-operator:main@324ddef9c98d74865a98ceb1a9470f1fdc7d1240:config"
-    ["modelcontroller"]="opendatahub-io:odh-model-controller:incubating@72e15dba5217e7ffb76995fd75720d806808616d:config"
-    ["feastoperator"]="opendatahub-io:feast:stable@3c6fd777b7d5c9de4f7949ee7b9ee7f829dc8528:infra/feast-operator/config"
+    ["modelcontroller"]="opendatahub-io:odh-model-controller:incubating@e019566bcc0a6f90ba901f05eddf0e820df06861:config"
+    ["feastoperator"]="opendatahub-io:feast:stable@94bc6204cbdbcbebfd004f64986f43397bfc0e65:infra/feast-operator/config"
     ["llamastackoperator"]="opendatahub-io:llama-stack-k8s-operator:odh@226e911cca9bf7efa1e632860613087b0bf14d74:config"
 )
 
